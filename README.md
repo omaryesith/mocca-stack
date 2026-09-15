@@ -496,8 +496,6 @@ Current structure:
 
 ```text
 mocca-stack/
-├── .agents/
-│   └── skills/
 ├── .github/
 │   └── workflows/
 ├── assets/
@@ -534,9 +532,6 @@ scripts/verify
 
 tests
 → protect Mocca's behavioral contract
-
-.agents/skills
-→ Mocca's own agent workflows and skills
 ```
 
 ---
