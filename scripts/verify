@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+
+./scripts/check
+./scripts/test
+./scripts/security

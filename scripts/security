@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+
+if rg -n --hidden --glob '!.git/**' --glob '!*.md' '(AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' .; then
+  echo "possible credential committed" >&2
+  exit 1
+fi

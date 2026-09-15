@@ -1,0 +1,23 @@
+#!/bin/sh
+set -eu
+
+usage() {
+  echo "usage: $0 DESTINATION" >&2
+  exit 2
+}
+
+[ "$#" -eq 1 ] || usage
+
+root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+target=$1
+
+if [ -e "$target" ] && [ "$(find "$target" -mindepth 1 -maxdepth 1 -print -quit)" ]; then
+  echo "destination must be empty: $target" >&2
+  exit 1
+fi
+
+mkdir -p "$target"
+cp -R "$root/templates/core/." "$target/"
+chmod +x "$target"/scripts/verify
+
+echo "Created Mocca workspace in $target"
