@@ -31,6 +31,42 @@ is not. After approval, an agent may update `MOCCA.md` as part of the
 authorized work. If a blocking ambiguity appears later, stop prohibited work;
 with explicit human approval, return to `DISCOVERY` or `SPECIFICATION`.
 
+## Project Pulse
+
+Project Pulse is a compact section in `MOCCA.md`, separate from Engineering
+State. It is an operational resume index, not a source of behavior, scope,
+acceptance criteria, architecture, or approval. Specifications remain
+authoritative when Pulse disagrees with a spec.
+
+Leave Pulse inactive before `IMPLEMENTATION`; `IMPLEMENTATION_READY` does not
+activate progress. During `IMPLEMENTATION`, use this compact shape:
+
+```md
+## Project Pulse
+
+**Current focus:** `specs/<spec>.md` — checkpoint 2 / 4
+**Next:** verify checkpoint 2
+
+| Spec | Status | Checkpoints | Current checkpoint | Blocked |
+| --- | --- | --- | --- | --- |
+| `specs/<spec>.md` | in_progress | 2 / 4 | <short checkpoint name> | — |
+```
+
+Use only `pending`, `in_progress`, `blocked`, `ready_for_verification`, and
+`done`. Derive coarse, observable checkpoints from the spec or implementation
+plan; do not use percentages, task history, estimates, or invented detail. A
+spec with no meaningful breakdown uses one checkpoint.
+
+`done` means all defined checkpoints for that spec are complete and its
+corresponding verification has passed. It does not accept a spec, authorize a
+new phase, or change Engineering State. A `blocked` entry must name a concrete
+actionable reason, such as an awaiting approval, unavailable test environment,
+missing dependency, or unresolved architecture decision.
+
+Within approved implementation scope, an agent may update Pulse to reflect
+completed checkpoints or blockers without separate approval. Pulse never
+changes scope, specs, architecture, approval, or Engineering State.
+
 GitHub Spec Kit is the Chef's Recommendation for a non-trivial specification,
 not a required dependency. The native `docs/` and `specs/` workflow is
 sufficient when Spec Kit is not installed or is not appropriate; its absence

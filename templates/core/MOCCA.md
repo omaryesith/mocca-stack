@@ -14,3 +14,9 @@ The current phase determines the kind of work appropriate now. Technology and
 architecture decisions become the basis for implementation specifications.
 `docs/integrations.md` records capability choices without making tools hard
 dependencies.
+
+## Project Pulse
+
+**Status:** not active — use during `IMPLEMENTATION`
+**Current focus:** —
+**Next:** —
