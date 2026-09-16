@@ -23,7 +23,7 @@ that is appropriate; autonomy and approval gates remain in
 | `DISCOVERY` | Intent, scope, high-level requirements, constraints, clarification, and technical direction. | Product implementation, deployment or infrastructure changes, and production migrations. | A human explicitly approves `SPECIFICATION` after blocking ambiguity is resolved enough to create a non-trivial specification. |
 | `SPECIFICATION` | Implementation-ready behavior, acceptance criteria, architecture drafts/ADRs, and blocking clarification. | Product implementation, deployment or infrastructure changes, and production migrations. | A human explicitly approves `IMPLEMENTATION_READY` after the specification is implementation-ready, consequential decisions are recorded, and verification passes. |
 | `IMPLEMENTATION_READY` | Review or correct the approved specification. | Product implementation, deployment or infrastructure changes, and production migrations. | An explicit human instruction to begin implementation approves `IMPLEMENTATION`. |
-| `IMPLEMENTATION` | Implement and verify within approved specifications, subject to autonomy and approval gates. | Work outside approved specifications. | No further transition is defined yet. |
+| `IMPLEMENTATION` | Implement and verify within approved specifications, subject to autonomy and approval gates. | Work outside approved specifications. | Complete checkpoints, surface stop conditions, and continue within approved scope as defined by `docs/autonomy.md`. |
 
 An unambiguous human instruction to advance a phase is explicit approval; a
 question, request for status, or request to describe possible implementation
@@ -52,20 +52,56 @@ activate progress. During `IMPLEMENTATION`, use this compact shape:
 | `specs/<spec>.md` | in_progress | 2 / 4 | <short checkpoint name> | — |
 ```
 
-Use only `pending`, `in_progress`, `blocked`, `ready_for_verification`, and
-`done`. Derive coarse, observable checkpoints from the spec or implementation
-plan; do not use percentages, task history, estimates, or invented detail. A
-spec with no meaningful breakdown uses one checkpoint.
+Add an `External dependency` column when one becomes relevant:
 
-`done` means all defined checkpoints for that spec are complete and its
-corresponding verification has passed. It does not accept a spec, authorize a
-new phase, or change Engineering State. A `blocked` entry must name a concrete
-actionable reason, such as an awaiting approval, unavailable test environment,
-missing dependency, or unresolved architecture decision.
+```md
+| Spec | Status | Checkpoints | Current checkpoint | External dependency | Blocked |
+| --- | --- | --- | --- | --- |
+| `specs/<spec>.md` | ready_for_verification | 2 / 4 | payment posting | Supabase project for RLS verification | — |
+```
+
+Use only `pending`, `in_progress`, `blocked`, `ready_for_verification`, and
+`done` for the spec's state within `IMPLEMENTATION`, not for an individual
+checkpoint. `Current checkpoint` identifies active work; `Checkpoints X / Y`
+shows checkpoint progress. `ready_for_verification` means work planned for the
+current cut is implemented but required verification evidence remains pending.
+`done` means all defined checkpoints for that spec are complete and all
+required verification has passed.
+
+Derive coarse, observable checkpoints from the spec or implementation plan;
+do not use percentages, task history, estimates, or invented detail. Favor a
+vertical, observable capability over accumulated layer-only work. Each
+checkpoint needs a definition of closure and verification evidence; a spec
+with no meaningful breakdown uses one checkpoint. `Current focus` identifies
+active work only: it does not certify prior checkpoints as fully verified when
+an external dependency or pending verification is explicitly recorded.
+
+An external dependency is visible when it becomes relevant, even if useful
+local work can continue. Use `blocked` only when no significant progress can
+continue until a concrete actionable reason is resolved, such as awaiting an
+approval, unavailable test environment, missing dependency, or unresolved
+architecture decision. Neither `blocked` nor `done` accepts a spec, authorizes
+a new phase, or changes Engineering State.
 
 Within approved implementation scope, an agent may update Pulse to reflect
 completed checkpoints or blockers without separate approval. Pulse never
 changes scope, specs, architecture, approval, or Engineering State.
+
+## Product source layout
+
+Keep Mocca-owned paths at the workspace root. For a simple application,
+`app/` is the recommended product source directory; architecture may instead
+justify layouts such as `apps/web`, `apps/api`, `packages`, `frontend`, or
+`backend`. Do not move, overwrite, or reuse Mocca-owned paths only to satisfy
+an external scaffold.
+
+## Implementation practice
+
+Use spec-driven development as the default. For behavior that is reasonably
+testable, prefer: spec → acceptance criteria → failing test → implementation
+→ passing test → refactor → verification. When test-first is not appropriate,
+define the verification strategy in the spec. Do not close a checkpoint without
+its required verification evidence.
 
 GitHub Spec Kit is the Chef's Recommendation for a non-trivial specification,
 not a required dependency. The native `docs/` and `specs/` workflow is

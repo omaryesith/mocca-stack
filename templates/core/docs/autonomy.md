@@ -19,4 +19,12 @@ existing architecture.
 ## A2 — approved feature
 
 An agent may carry an approved spec, plan, and task list through implementation
-and iterative verification.
+and iterative verification. Within explicitly approved implementation scope,
+that authorization persists across ordinary steps and checkpoints: continue
+with substantive work and verification rather than returning control after a
+micro-step or responding only with intent.
+
+Stop when a checkpoint is complete, a real blocker or approval gate appears, a
+material conflict affects scope, architecture, data model, or security, an
+external or destructive action lacks authorization, or a verification failure
+cannot be resolved safely.
