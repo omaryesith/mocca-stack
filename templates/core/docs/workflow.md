@@ -80,6 +80,14 @@ skip several checkpoints in Pulse. `Current focus` identifies active work
 only: it does not certify prior checkpoints as fully verified when an external
 dependency or pending verification is explicitly recorded.
 
+Do not begin implementation work for checkpoint N+1 until checkpoint N has
+reached verified closure or `ready_for_verification` with its pending evidence
+explicitly recorded in Pulse. Update Pulse at that boundary before starting the
+next checkpoint; do not silently jump from `0 / N` to `N / N`. Multiple
+checkpoints may proceed autonomously in one agent turn after each boundary is
+recorded. No human approval or handoff is required between ordinary
+checkpoints.
+
 An external dependency is visible when it becomes relevant, even if useful
 local work can continue. Use `blocked` only when no significant progress can
 continue until a concrete actionable reason is resolved, such as awaiting an
@@ -103,12 +111,16 @@ overwrite, or reuse Mocca-owned paths only to satisfy an external scaffold.
 
 ## Implementation practice
 
-Use spec-driven development as the default. For behavior that is reasonably
-testable, test-first is the default: acceptance criteria → failing test →
-implementation → passing test → refactor → verification. When test-first is
-not appropriate, state the reason and alternative verification strategy in the
-spec before implementation. Do not close a checkpoint without its required
-verification evidence.
+Use spec-driven development as the default. For each reasonably testable
+product behavior, create at least one relevant acceptance or behavior test
+before implementing that behavior. Run it and confirm that it fails for the
+expected reason; then implement the minimum needed to make it pass, refactor
+with tests green, and run the required verification. Create only the minimum
+scaffolding needed to write and run the first test; scaffolding must not
+implement the product behavior itself. If test-first is not appropriate, state
+the reason and alternative verification strategy in the spec before
+implementation. Do not close a checkpoint without its required verification
+evidence.
 
 GitHub Spec Kit is the Chef's Recommendation for a non-trivial specification,
 not a required dependency. The native `docs/` and `specs/` workflow is
