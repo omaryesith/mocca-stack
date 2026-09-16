@@ -8,9 +8,12 @@ What outcome should this project create, for whom, and why now?
 
 State the first useful outcome and explicit non-goals.
 
-## Requirements
+## High-level requirements
 
-Record observable user, business, and operational requirements.
+Record observable user, business, and operational requirements. This document
+owns high-level product intent, scope, constraints, clarifications, and
+high-level requirements; `specs/` owns implementation-ready behavior,
+acceptance criteria, and implementation contracts.
 
 ## Constraints
 

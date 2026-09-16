@@ -5,8 +5,17 @@ project, work in this order:
 
 `idea -> vision -> scope -> requirements -> constraints -> clarification -> technical options -> technology selection -> architecture -> ADRs -> implementation specs -> implementation`
 
-For a non-trivial specification, GitHub Spec Kit is the Chef's Recommendation.
-Initialize it only when the project is ready to use it:
+GitHub Spec Kit is the Chef's Recommendation for a non-trivial specification,
+not a required dependency. The native `docs/` and `specs/` workflow is
+sufficient when Spec Kit is not installed or is not appropriate; its absence
+must not block engineering work. Bootstrap never installs it.
+
+Use Spec Kit only when clarified intent and requirements make a non-trivial
+implementation specification likely to benefit from structured
+specification, plan, and task decomposition. Do not initialize it during early
+discovery merely because it is available.
+
+When that threshold is met, initialize it with:
 
 ```sh
 specify init --here --integration codex --integration-options="--skills"
