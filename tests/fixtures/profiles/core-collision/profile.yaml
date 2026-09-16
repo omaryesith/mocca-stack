@@ -1,0 +1,11 @@
+schema_version: 1
+name: core-collision
+version: 1.0.0
+description: Test unsupported environment file.
+capabilities:
+  - test:core-collision
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+contributions:
+  environment: environment/

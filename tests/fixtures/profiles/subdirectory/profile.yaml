@@ -1,0 +1,11 @@
+schema_version: 1
+name: subdirectory
+version: 1.0.0
+description: Test nested environment rejection.
+capabilities:
+  - test:subdirectory
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+contributions:
+  environment: environment/

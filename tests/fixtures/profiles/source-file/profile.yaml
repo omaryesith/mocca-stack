@@ -1,0 +1,11 @@
+schema_version: 1
+name: source-file
+version: 1.0.0
+description: Test source file rejection.
+capabilities:
+  - test:source-file
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+contributions:
+  environment: environment/

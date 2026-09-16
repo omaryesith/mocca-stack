@@ -1,0 +1,11 @@
+schema_version: 1
+name: base
+version: 1.0.0
+description: Test base Profile.
+capabilities:
+  - test:base
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+contributions:
+  environment: environment/

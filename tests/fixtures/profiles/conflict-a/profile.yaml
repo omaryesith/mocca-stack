@@ -1,0 +1,13 @@
+schema_version: 1
+name: conflict-a
+version: 1.0.0
+description: Test conflicting Profile A.
+capabilities:
+  - test:conflict-a
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+contributions:
+  environment: environment/
+conflicts:
+  - conflict-b

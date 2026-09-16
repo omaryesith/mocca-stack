@@ -1,0 +1,9 @@
+schema_version: 1
+name: invalid-manifest
+version: 1.0.0
+description: Invalid fixture missing required capabilities.
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+contributions:
+  environment: environment/

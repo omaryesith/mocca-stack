@@ -1,0 +1,11 @@
+schema_version: 1
+name: collision-a
+version: 1.0.0
+description: Test colliding Profile A.
+capabilities:
+  - test:collision-a
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+contributions:
+  environment: environment/

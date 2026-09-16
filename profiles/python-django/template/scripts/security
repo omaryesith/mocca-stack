@@ -1,5 +1,0 @@
-#!/bin/sh
-set -eu
-
-uv run bandit -q -r app config
-uv run pip-audit

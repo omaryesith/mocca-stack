@@ -1,28 +1,23 @@
-# python-django profile
+# python-django Profile
 
-This optional capability pack is deliberately plain: Django with SQLite, one
-health endpoint, Ruff, pytest, Bandit, and pip-audit. It is not a project
-starter and bootstrap never applies it.
+The reference Profile for Profile Contract v1. It provides Django dependency
+configuration through `uv`, `pyproject.toml`, `uv.lock`, Ruff, and a Pytest
+baseline. It is not a product starter and contributes no application source.
 
-Apply it only after the project's technology selection is recorded in an ADR.
-Its application workflow is intentionally deferred in v0.1; the pack lives in
-`template/` so it is available without making Django a core dependency.
+Apply it after an approved Python + Django technology decision, or select it
+explicitly at bootstrap when that decision already exists. Its environment is
+additive and never replaces Mocca Core paths.
 
-## Extension contract
+## Verification
 
-- **Responsibility:** Django implementation and its deterministic checks.
-- **Prerequisite:** an approved technology-selection ADR naming Django.
-- **Contribution:** the files in `template/`, including Django verification
-  scripts.
-- **Verification:** Ruff, pytest, Bandit, and pip-audit after the pack is
-  applied.
-
-This pack must not require changes to `templates/core` or
-`scripts/bootstrap`.
+After `uv sync`, run:
 
 ```sh
-./scripts/check
-./scripts/test
-./scripts/security
-./scripts/verify
+uv run ruff check .
+uv run pytest
 ```
+
+These commands are documented evidence for this Profile. Mocca does not run
+them automatically from `scripts/verify`. During `IMPLEMENTATION`, the agent
+creates `app/` when appropriate, Django settings, apps, tests, routes, models,
+and other product structure from the approved architecture and specification.

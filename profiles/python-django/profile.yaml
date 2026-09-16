@@ -1,0 +1,24 @@
+schema_version: 1
+name: python-django
+version: 1.0.0
+description: Django engineering environment managed with uv.
+
+capabilities:
+  - language:python
+  - framework:django
+  - package-manager:uv
+
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+
+contributions:
+  environment: environment/
+
+matches:
+  - language:python
+  - framework:django
+
+dependencies: []
+conflicts: []
+reapply: fail

@@ -1,0 +1,13 @@
+schema_version: 1
+name: needs-base
+version: 1.0.0
+description: Test Profile with a dependency.
+capabilities:
+  - test:dependency
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+contributions:
+  environment: environment/
+dependencies:
+  - base

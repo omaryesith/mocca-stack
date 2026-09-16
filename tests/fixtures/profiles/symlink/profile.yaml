@@ -1,0 +1,11 @@
+schema_version: 1
+name: symlink
+version: 1.0.0
+description: Test symbolic link rejection.
+capabilities:
+  - test:symlink
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+contributions:
+  environment: environment/

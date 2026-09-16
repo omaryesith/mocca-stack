@@ -1,4 +1,4 @@
 #!/bin/sh
 set -eu
 
-sh -n scripts/bootstrap scripts/check scripts/test scripts/security scripts/verify tests/bootstrap.sh templates/core/scripts/verify
+sh -n scripts/bootstrap scripts/check scripts/test scripts/security scripts/verify tests/bootstrap.sh tests/profiles.sh templates/core/scripts/verify
