@@ -68,13 +68,17 @@ current cut is implemented but required verification evidence remains pending.
 `done` means all defined checkpoints for that spec are complete and all
 required verification has passed.
 
-Derive coarse, observable checkpoints from the spec or implementation plan;
-do not use percentages, task history, estimates, or invented detail. Favor a
-vertical, observable capability over accumulated layer-only work. Each
-checkpoint needs a definition of closure and verification evidence; a spec
-with no meaningful breakdown uses one checkpoint. `Current focus` identifies
-active work only: it does not certify prior checkpoints as fully verified when
-an external dependency or pending verification is explicitly recorded.
+Define coarse checkpoints from the spec or implementation plan before
+`IMPLEMENTATION` begins; do not use percentages, task history, estimates, or
+invented detail. Each checkpoint represents an observable capability and needs
+a definition of closure and verification evidence; favor vertical capabilities
+over accumulated layer-only work. A spec with no meaningful breakdown uses one
+checkpoint. Treat the current checkpoint as the execution unit. At each
+verifiable closure—or when required verification becomes explicitly
+pending—update Pulse before advancing to later checkpoints. Do not silently
+skip several checkpoints in Pulse. `Current focus` identifies active work
+only: it does not certify prior checkpoints as fully verified when an external
+dependency or pending verification is explicitly recorded.
 
 An external dependency is visible when it becomes relevant, even if useful
 local work can continue. Use `blocked` only when no significant progress can
@@ -90,18 +94,21 @@ changes scope, specs, architecture, approval, or Engineering State.
 ## Product source layout
 
 Keep Mocca-owned paths at the workspace root. For a simple application,
-`app/` is the recommended product source directory; architecture may instead
-justify layouts such as `apps/web`, `apps/api`, `packages`, `frontend`, or
-`backend`. Do not move, overwrite, or reuse Mocca-owned paths only to satisfy
-an external scaffold.
+`app/` is the default product source directory. Use another layout only when
+approved architecture or established stack conventions provide a concrete
+benefit; record the brief reason in the relevant specification or architecture
+note before implementation. Layouts such as `apps/web`, `apps/api`,
+`packages`, `frontend`, or `backend` remain valid when justified. Do not move,
+overwrite, or reuse Mocca-owned paths only to satisfy an external scaffold.
 
 ## Implementation practice
 
 Use spec-driven development as the default. For behavior that is reasonably
-testable, prefer: spec → acceptance criteria → failing test → implementation
-→ passing test → refactor → verification. When test-first is not appropriate,
-define the verification strategy in the spec. Do not close a checkpoint without
-its required verification evidence.
+testable, test-first is the default: acceptance criteria → failing test →
+implementation → passing test → refactor → verification. When test-first is
+not appropriate, state the reason and alternative verification strategy in the
+spec before implementation. Do not close a checkpoint without its required
+verification evidence.
 
 GitHub Spec Kit is the Chef's Recommendation for a non-trivial specification,
 not a required dependency. The native `docs/` and `specs/` workflow is
