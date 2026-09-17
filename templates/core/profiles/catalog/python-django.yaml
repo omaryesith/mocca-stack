@@ -1,0 +1,19 @@
+schema_version: 1
+name: python-django
+version: 1.0.0
+description: Django engineering environment managed with uv.
+
+capabilities:
+  - language:python
+  - framework:django
+  - package-manager:uv
+
+matches:
+  - language:python
+  - framework:django
+
+source:
+  provider: github
+  repository: omaryesith/mocca-stack
+  path: profiles/python-django
+  ref: 03a8860ca4c5f0c9570356b103ea01c6e05e011c

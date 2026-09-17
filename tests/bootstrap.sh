@@ -13,6 +13,9 @@ done
 
 test -x "$target/project/scripts/verify"
 test -x "$target/project/scripts/apply-profile"
+test -f "$target/project/profiles/catalog/python-django.yaml"
+test ! -e "$target/project/profiles/python-django"
+test ! -e "$target/project/environment"
 test ! -e "$target/project/pyproject.toml"
 test ! -e "$target/project/manage.py"
 test ! -e "$target/project/app"

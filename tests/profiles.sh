@@ -16,9 +16,48 @@ grep -Fq 'Commit A' "$repo/docs/profile-catalog-contract-v1.md"
 grep -Fq 'scripts/apply-profile' "$repo/templates/core/docs/technology.md"
 test -f "$repo/templates/core/profiles/catalog/README.md"
 
+pin=03a8860ca4c5f0c9570356b103ea01c6e05e011c
+catalog="$repo/templates/core/profiles/catalog/python-django.yaml"
+test -f "$catalog"
+grep -Fqx "  ref: $pin" "$catalog"
+test "${#pin}" -eq 40
+git -C "$root" cat-file -e "$pin^{commit}"
+git -C "$root" cat-file -e "$pin:profiles/python-django/profile.yaml"
+
+profile_metadata() {
+  awk '
+    /^name:|^version:|^description:/ { print; section = ""; next }
+    /^capabilities:|^matches:/ { section = $1; sub(/:.*/, "", section); next }
+    /^  - / && (section == "capabilities" || section == "matches") { print section ": " $0; next }
+    /^[^ ]/ { section = "" }
+  '
+}
+
+profile_metadata <"$catalog" >"$work/catalog-metadata"
+git -C "$root" show "$pin:profiles/python-django/profile.yaml" | profile_metadata >"$work/payload-metadata"
+cmp -s "$work/catalog-metadata" "$work/payload-metadata"
+
+catalog_matches() {
+  tokens=$1
+  matches=$(awk '
+    /^matches:/ { section = 1; next }
+    /^[^ ]/ { section = 0 }
+    section && /^  - / { sub(/^  - /, ""); print }
+  ' "$catalog")
+  for token in $matches; do
+    printf '%s\n' "$tokens" | tr ' ' '\n' | grep -Fqx "$token" || return 1
+  done
+}
+
+catalog_matches 'language:python framework:django database:sqlite'
+
 "$repo/scripts/bootstrap" "$work/core" >/dev/null
 test -x "$work/core/scripts/apply-profile"
 test -d "$work/core/profiles/catalog"
+test -f "$work/core/profiles/catalog/python-django.yaml"
+test ! -e "$work/core/profiles/python-django"
+test ! -e "$work/core/environment"
+test ! -e "$work/core/pyproject.toml"
 grep -Fqx '**Applied profiles:** none' "$work/core/MOCCA.md"
 
 if "$work/core/scripts/apply-profile" --profiles base >"$work/gated.out" 2>"$work/gated.err"; then
