@@ -4,6 +4,8 @@
 
 > Small footprint. Big attitude.
 
+English | [Español](README.es.md)
+
 <p align="center">
   <img src="assets/mocca-yorkie.png" alt="Mocca, the Yorkie engineering mascot" width="300">
 </p>
@@ -47,7 +49,7 @@ decisions, and implementation readiness.
 
 ### Starting with a known engineering environment
 
-The default path is Core only: no language, framework, database, container
+Core only is the default path: no language, framework, database, container
 stack, or product source tree is selected.
 
 If a human has already explicitly selected an engineering environment, apply
@@ -60,6 +62,13 @@ Catalog-backed Profiles at bootstrap:
 
 Profiles prepare the approved engineering environment. They do not generate,
 select, or pre-shape the product source tree.
+
+`--profiles` is an explicit human selection. Inside an existing workspace,
+apply a selected Profile through the canonical applicator:
+
+```sh
+./scripts/apply-profile --profiles python-django
+```
 
 ## What Mocca is
 
@@ -105,6 +114,23 @@ discoverable from the workspace itself. Read the generated
 [workflow guide](templates/core/docs/workflow.md) for the lifecycle and state
 semantics.
 
+Profile lifecycle remains separate from Engineering State:
+
+```text
+Approved capabilities
+→ local Profile Catalog
+→ compatible Profile
+→ human selection
+→ remote fetch
+→ validation
+→ Profile Application
+→ Applied Profiles
+```
+
+The Catalog contains local metadata; an explicitly selected Profile payload is
+fetched on demand from a source pinned to an immutable commit SHA. Read the
+[Profile Catalog Contract v1](docs/profile-catalog-contract-v1.md) for details.
+
 ## Core concepts
 
 Mocca Core is technology-neutral. It owns the reusable engineering process,
@@ -130,15 +156,20 @@ practice live in the [workflow guide](templates/core/docs/workflow.md).
 ## Profiles
 
 Profiles are declarative, optional, and composable capability packs. Core
-ships local Catalog metadata for discovery; after technology selection,
-compatible Profiles are offered to the engineer and fetched only after
-explicit selection.
+ships local Catalog metadata; compatible payloads are fetched on demand after
+human selection from sources pinned to immutable commit SHAs.
 
 > Profiles prepare the approved engineering environment. They must not create,
 > select, or pre-shape the product source tree.
 
-`python-django` is the current official reference Profile. It prepares Python,
-Django, `uv`, linting, and test tooling without copying an application.
+Normal application happens in `IMPLEMENTATION_READY` through
+`scripts/apply-profile`. Profiles do not generate application scaffolds.
+
+Available Profiles:
+
+| Profile | Engineering environment | Does not add |
+| --- | --- | --- |
+| `python-django` | Python, Django, `uv`, `pyproject.toml`, lint/testing baseline | `app/`, `manage.py`, models, views, routes, auth, or product behavior |
 
 Use the [Profile Contract v1](docs/profile-contract-v1.md) for payload safety
 and composition, and the [Profile Catalog Contract v1](docs/profile-catalog-contract-v1.md)
@@ -167,8 +198,14 @@ dependencies.
 MCP integrations are opt-in. Use a recommended tool only when the active
 harness exposes it and it materially improves the responsibility at hand;
 otherwise use Mocca's Core fallback. Bootstrap installs and probes none of
-them. Docker is recommended, not required; its future materialization belongs
-to an optional Profile, not Core.
+them. Core remains usable without Ponytail, Graphify, Spec Kit, Context7, or
+MCPs; Mocca never claims an unavailable capability was used or provisions one.
+
+Docker is recommended when it provides operational value, not required by
+Core, Bootstrap, Discovery, or Specification. If unavailable, it blocks only
+an operation that actually requires Docker; Mocca never installs, provisions,
+or modifies the host. Its future materialization belongs to an optional Profile,
+not Core.
 
 ## Dogfooding
 
@@ -197,6 +234,7 @@ development.
 | Mocca verification contract | [Verification](docs/verification.md) |
 | Profile payload safety and composition | [Profile Contract v1](docs/profile-contract-v1.md) |
 | Profile availability and pinned remote sources | [Profile Catalog Contract v1](docs/profile-catalog-contract-v1.md) |
+| Capability fallbacks and Docker posture | [Integrations](templates/core/docs/integrations.md) |
 | Using or authoring Profiles | [Profiles guide](profiles/README.md) |
 | Mocca's layers and extension boundary | [Architecture overview](docs/architecture/overview.md) |
 | What an implementation-ready spec owns | [Specs guide](templates/core/specs/README.md) |
