@@ -1,3 +1,5 @@
+<div align="center">
+
 # Mocca
 
 **Reusable Agentic Engineering Stack**
@@ -9,6 +11,8 @@
 *Todavía aprendiendo que no debo morder los muebles.* 🐶
 
 [English](README.md) | Español
+
+</div>
 
 > Esta es una traducción para lectores humanos. `README.md` y la documentación
 > inglesa enlazada son las fuentes canónicas.
