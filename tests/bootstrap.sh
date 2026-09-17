@@ -14,8 +14,10 @@ grep -Fq 'use native `docs/` and `specs/` when unavailable' "$target/project/doc
 grep -Fq 'Required only by remote Profile Application; Profile Discovery is local' "$target/project/docs/integrations.md"
 grep -Fq 'Docker is not required by Core,' "$target/project/docs/integrations.md"
 grep -Fq 'Bootstrap, Discovery, Specification, or Profile Discovery' "$target/project/docs/integrations.md"
-grep -Fq 'does not block Discovery or Specification' "$target/project/docs/integrations.md"
-grep -Fq 'without attempting installation, provisioning, privilege escalation' "$target/project/docs/integrations.md"
+grep -Fq 'approved conceptually while absent; that absence does not block Discovery or' "$target/project/docs/integrations.md"
+grep -Fq 'Specification. Report it once' "$target/project/docs/integrations.md"
+grep -Fq 'without attempting installation, provisioning,' "$target/project/docs/integrations.md"
+grep -Fq 'privilege escalation, service changes' "$target/project/docs/integrations.md"
 grep -Fq 'Docker is required for this operation but is not available in the current environment' "$target/project/docs/integrations.md"
 grep -Fq 'install, provision, enable, or modify the host automatically' "$target/project/AGENTS.md"
 grep -Fq 'Clean-environment E2E' "$target/project/docs/integrations.md"
@@ -27,9 +29,14 @@ if grep -Eq 'command -v (codex|ponytail|graphify|specify|docker)|\.codex|\.agent
   exit 1
 fi
 
-for path in AGENTS.md MOCCA.md .gitignore docs/constitution.md docs/discovery.md docs/technology.md docs/integrations.md docs/architecture/README.md docs/architecture/adr/README.md docs/autonomy.md docs/workflow.md specs/README.md scripts/verify scripts/apply-profile profiles/catalog; do
+for path in AGENTS.md MOCCA.md .gitignore docs/constitution.md docs/discovery.md docs/technology.md docs/integrations.md docs/architecture/README.md docs/architecture/adr/README.md docs/autonomy.md docs/workflow.md specs/README.md scripts/verify scripts/apply-profile; do
   test -f "$target/project/$path"
 done
+
+test -d "$target/project/profiles/catalog" || {
+  echo "missing Profile Catalog directory" >&2
+  exit 1
+}
 
 test -x "$target/project/scripts/verify"
 test -x "$target/project/scripts/apply-profile"
