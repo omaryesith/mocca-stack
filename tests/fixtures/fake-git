@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+
+if [ "$1" = -C ]; then
+  directory=$2
+  shift 2
+else
+  directory=''
+fi
+
+case "$1" in
+  init)
+    for argument in "$@"; do directory=$argument; done
+    mkdir -p "$directory/.git"
+    ;;
+  remote) ;;
+  fetch) printf '%s\n' "$MOCCA_FAKE_GIT_REF" >"$directory/FETCH_HEAD" ;;
+  rev-parse) cat "$directory/FETCH_HEAD" ;;
+  sparse-checkout) ;;
+  checkout) mkdir -p "$directory/profiles"; cp -R "$MOCCA_FAKE_PROFILE" "$directory/profiles/base" ;;
+  *) echo "unexpected fake git command: $*" >&2; exit 1 ;;
+esac

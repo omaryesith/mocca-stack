@@ -21,7 +21,9 @@ implementation, never applied automatically. Their manifests contain no hooks
 or executable runtime. Core paths remain protected, and third-party
 verification commands are documented rather than executed automatically.
 Profiles contribute only a flat, allowlisted engineering environment; they do
-not scaffold or pre-shape product source.
+not scaffold or pre-shape product source. They contribute declarative
+engineering configuration, not generated or resolved project artifacts such
+as dependency lockfiles.
 
 ## Consequences
 

@@ -20,8 +20,8 @@ that is appropriate; autonomy and approval gates remain in
 
 | Phase | Allowed work | Prohibited work | Exit |
 | --- | --- | --- | --- |
-| `DISCOVERY` | Intent, scope, high-level requirements, constraints, clarification, and technical direction. | Product implementation, deployment or infrastructure changes, and production migrations. | A human explicitly approves `SPECIFICATION` after blocking ambiguity is resolved enough to create a non-trivial specification. |
-| `SPECIFICATION` | Implementation-ready behavior, acceptance criteria, architecture drafts/ADRs, and blocking clarification. | Product implementation, deployment or infrastructure changes, and production migrations. | A human explicitly approves `IMPLEMENTATION_READY` after the specification is implementation-ready, consequential decisions are recorded, and verification passes. |
+| `DISCOVERY` | Intent, scope, high-level requirements, constraints, clarification, and technical direction. | Product implementation, deployment or infrastructure changes, and production migrations. | A human explicitly approves `SPECIFICATION` after blocking ambiguity is resolved enough to create a non-trivial specification and Profile Discovery is resolved for every approved technology or relevant capability. |
+| `SPECIFICATION` | Implementation-ready behavior, acceptance criteria, architecture drafts/ADRs, and blocking clarification. | Product implementation, deployment or infrastructure changes, and production migrations. | A human explicitly approves `IMPLEMENTATION_READY` after the specification is implementation-ready, consequential decisions are recorded, Profile Discovery is resolved and documented for every approved technology or relevant capability, and verification passes. |
 | `IMPLEMENTATION_READY` | Review or correct the approved specification. | Product implementation, deployment or infrastructure changes, and production migrations. | An explicit human instruction to begin implementation approves `IMPLEMENTATION`. |
 | `IMPLEMENTATION` | Implement and verify within approved specifications, subject to autonomy and approval gates. | Work outside approved specifications. | Complete checkpoints, surface stop conditions, and continue within approved scope as defined by `docs/autonomy.md`. |
 
@@ -30,6 +30,19 @@ question, request for status, or request to describe possible implementation
 is not. After approval, an agent may update `MOCCA.md` as part of the
 authorized work. If a blocking ambiguity appears later, stop prohibited work;
 with explicit human approval, return to `DISCOVERY` or `SPECIFICATION`.
+
+## Profile Discovery gate
+
+After technology or a relevant capability is approved, resolve Profile
+Discovery before asking for the `DISCOVERY` to `SPECIFICATION` transition:
+inspect local Catalog entries, identify compatible candidates, present them to
+the human, and resolve selection or rejection. Discovery never applies a
+Profile. Selection resolves the gate; normal application happens later in
+`IMPLEMENTATION_READY` through `scripts/apply-profile`.
+If technology is approved during `SPECIFICATION`, resolve this gate immediately
+before further architecture work and always before `IMPLEMENTATION_READY`.
+Follow `docs/technology.md` for the procedure and record its outcome there,
+in an ADR, or in the relevant specification.
 
 ## Project Pulse
 

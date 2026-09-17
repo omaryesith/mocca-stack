@@ -15,6 +15,10 @@ architecture decisions become the basis for implementation specifications.
 `docs/integrations.md` records capability choices without making tools hard
 dependencies.
 
+## Applied Profiles
+
+**Applied profiles:** none
+
 ## Project Pulse
 
 **Status:** not active — use during `IMPLEMENTATION`

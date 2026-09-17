@@ -9,6 +9,9 @@ Mocca has three layers:
 3. **Development harness:** root `scripts/`, `tests/`, and CI verify Mocca's
    bootstrap contract.
 
+Local Profile Catalog metadata is part of Core. Payloads are fetched only by a
+workspace after explicit selection; see [ADR 0004](adr/0004-profile-catalog-and-application.md).
+
 The Chef's Recommendation maps responsibilities to current preferred tools;
 it is documentation, not an installed runtime dependency. The core boundary
 is defined by [ADR 0001](adr/0001-extension-boundary.md). Technology-neutral

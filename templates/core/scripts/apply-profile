@@ -1,0 +1,255 @@
+#!/bin/sh
+set -eu
+
+usage() {
+  echo "usage: $0 [--bootstrap-initialization] --profiles NAME..." >&2
+  exit 2
+}
+
+workspace=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+temporary=$(mktemp -d "${TMPDIR:-/tmp}/mocca-profile.XXXXXX")
+written="$temporary/written"
+: >"$written"
+committed=false
+trap 'if [ "$committed" = false ]; then while IFS= read -r file; do rm -f "$file"; done <"$written"; fi; rm -rf "$temporary"' EXIT HUP INT TERM
+selected="$temporary/selected"
+: >"$selected"
+bootstrap_initialization=false
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --bootstrap-initialization)
+      "$bootstrap_initialization" && usage
+      bootstrap_initialization=true
+      shift
+      ;;
+    --profiles)
+      [ "$#" -ge 2 ] || usage
+      name=$2
+      shift 2
+      case "$name" in *[!a-z0-9-]*|''|-*) echo "invalid profile name: $name" >&2; exit 1;; esac
+      if grep -Fqx "$name" "$selected"; then
+        echo "profile selected more than once: $name" >&2
+        exit 1
+      fi
+      printf '%s\n' "$name" >>"$selected"
+      ;;
+    *) usage;;
+  esac
+done
+
+[ -s "$selected" ] || usage
+
+workspace_valid() {
+  for path in AGENTS.md MOCCA.md docs/constitution.md docs/discovery.md docs/technology.md docs/integrations.md docs/architecture/README.md docs/architecture/adr/README.md docs/autonomy.md docs/workflow.md specs/README.md scripts/verify profiles/catalog; do
+    test -e "$workspace/$path" || return 1
+  done
+}
+
+workspace_valid || { echo "not a valid Mocca workspace: $workspace" >&2; exit 1; }
+
+if "$bootstrap_initialization"; then
+  [ -f "$workspace/.mocca-bootstrap-staging" ] || {
+    echo "--bootstrap-initialization requires Mocca bootstrap staging" >&2
+    exit 1
+  }
+else
+  grep -Fqx '**Current phase:** `IMPLEMENTATION_READY`' "$workspace/MOCCA.md" || {
+    echo "Profile application requires Engineering State IMPLEMENTATION_READY" >&2
+    exit 1
+  }
+fi
+
+read_applied_profiles() {
+  awk '
+    /^\*\*Applied profiles:\*\* / {
+      count++; value = $0; sub(/^\*\*Applied profiles:\*\* /, "", value)
+    }
+    END {
+      if (count != 1 || value == "") exit 1
+      if (value == "none") { print value; exit }
+      number = split(value, profiles, ", "); rebuilt = ""
+      for (position = 1; position <= number; position++) {
+        if (profiles[position] !~ /^[a-z0-9][a-z0-9-]*$/ || seen[profiles[position]]++) exit 1
+        rebuilt = rebuilt (position == 1 ? "" : ", ") profiles[position]
+      }
+      if (rebuilt != value) exit 1
+      print value
+    }
+  ' "$workspace/MOCCA.md" || { echo "invalid Applied profiles state in $workspace/MOCCA.md" >&2; return 1; }
+}
+
+profile_is_applied() {
+  [ "$1" = none ] && return 1
+  printf '%s\n' "$1" | awk -v profile="$2" -F ', ' '{ for (i = 1; i <= NF; i++) if ($i == profile) exit 0; exit 1 }'
+}
+
+meta_value() { awk -F '\t' -v key="$2" '$1 == key { print substr($0, length($1) + 2); exit }' "$1"; }
+meta_has() { grep -Fqx "seen	$2" "$1"; }
+meta_list_has_item() { awk -F '\t' -v key="$2" '$1 == key { found = 1 } END { exit !found }' "$1"; }
+meta_list_equal() {
+  field=$1 left=$2 right=$3
+  awk -F '\t' -v key="$field" '$1 == key { print $2 }' "$left" >"$temporary/left"
+  awk -F '\t' -v key="$field" '$1 == key { print $2 }' "$right" >"$temporary/right"
+  cmp -s "$temporary/left" "$temporary/right"
+}
+
+parse_yaml() {
+  kind=$1 input=$2 output=$3
+  awk -v kind="$kind" '
+    function fail(message) { print FILENAME ": " message > "/dev/stderr"; bad = 1; exit 1 }
+    function trim(value) { sub(/^[[:space:]]+/, "", value); sub(/[[:space:]]+$/, "", value); return value }
+    BEGIN {
+      array["capabilities"] = 1; array["matches"] = 1
+      scalar["schema_version"] = 1; scalar["name"] = 1; scalar["version"] = 1; scalar["description"] = 1
+      if (kind == "profile") { array["dependencies"] = 1; array["conflicts"] = 1; scalar["reapply"] = 1 }
+    }
+    /^[[:space:]]*$/ || /^[[:space:]]*#/ { next }
+    /^[a-z_]+:/ {
+      key = $0; sub(/:.*/, "", key); value = $0; sub(/^[^:]*:[[:space:]]*/, "", value); value = trim(value)
+      mapping = (kind == "profile" && (key == "lifecycle" || key == "contributions")) || (kind == "catalog" && key == "source")
+      if (!(key in array) && !(key in scalar) && !mapping) fail("unknown key " key)
+      if (++seen[key] != 1) fail("duplicate key " key)
+      section = key
+      if (key in array) { if (value != "" && value != "[]") fail(key " must be a YAML list") }
+      else if (mapping) { if (value != "") fail(key " must be a YAML mapping") }
+      else { if (value == "") fail(key " must not be empty"); print key "\t" value }
+      next
+    }
+    /^  - / {
+      if (!(section in array)) fail("list item outside a list")
+      value = $0; sub(/^  - /, "", value); value = trim(value); if (value == "") fail("empty list item")
+      print section "\t" value; next
+    }
+    /^  [a-z_]+:/ {
+      allowed = (kind == "profile" && ((section == "lifecycle" && ($0 ~ /^  (apply_after|apply_in):/)) || (section == "contributions" && $0 ~ /^  environment:/))) || (kind == "catalog" && section == "source" && $0 ~ /^  (provider|repository|path|ref):/)
+      if (!allowed) fail("unsupported nested key")
+      key = $0; sub(/^  /, "", key); sub(/:.*/, "", key); value = $0; sub(/^  [^:]*:[[:space:]]*/, "", value); value = trim(value)
+      if (value == "") fail("empty " section "." key)
+      composite = section "." key; if (++seen[composite] != 1) fail("duplicate key " composite)
+      print composite "\t" value; next
+    }
+    { fail("unsupported YAML") }
+    END { if (bad) exit 1; for (key in seen) print "seen\t" key }
+  ' "$input" >"$output"
+}
+
+validate_catalog() {
+  name=$1 entry="$workspace/profiles/catalog/$name.yaml" meta="$temporary/$name.catalog"
+  test -f "$entry" || { echo "Profile not available in local catalog: $name" >&2; return 1; }
+  parse_yaml catalog "$entry" "$meta" || return 1
+  for key in schema_version name version description capabilities matches source.provider source.repository source.path source.ref; do
+    meta_has "$meta" "$key" || { echo "$entry: missing required field $key" >&2; return 1; }
+  done
+  meta_list_has_item "$meta" capabilities || { echo "$entry: capabilities must not be empty" >&2; return 1; }
+  [ "$(meta_value "$meta" schema_version)" = 1 ] || { echo "$entry: unsupported schema_version" >&2; return 1; }
+  [ "$(meta_value "$meta" name)" = "$name" ] || { echo "$entry: name must match filename" >&2; return 1; }
+  [ "$(meta_value "$meta" source.provider)" = github ] || { echo "$entry: unsupported source provider" >&2; return 1; }
+  repository=$(meta_value "$meta" source.repository); path=$(meta_value "$meta" source.path); ref=$(meta_value "$meta" source.ref)
+  case "$repository" in */*) case "$repository" in *'/'*'/'*|/*|*/|*[!A-Za-z0-9._/-]*) echo "$entry: invalid source.repository" >&2; return 1;; esac;; *) echo "$entry: invalid source.repository" >&2; return 1;; esac
+  case "$path" in ''|/*|*../*|../*|*'/..'|*'//'* ) echo "$entry: invalid source.path" >&2; return 1;; esac
+  case "$ref" in [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;; *) echo "$entry: source.ref must be a full lowercase commit SHA" >&2; return 1;; esac
+}
+
+fetch_profile() {
+  name=$1 catalog="$temporary/$name.catalog" repository=$(meta_value "$catalog" source.repository) path=$(meta_value "$catalog" source.path) ref=$(meta_value "$catalog" source.ref)
+  command -v git >/dev/null 2>&1 || { echo "Profile application requires git with sparse-checkout support" >&2; return 1; }
+  repo="$temporary/fetch-$name"
+  git init -q "$repo" || return 1
+  git -C "$repo" remote add origin "https://github.com/$repository.git"
+  if ! GIT_TERMINAL_PROMPT=0 git -C "$repo" fetch -q --depth=1 origin "$ref"; then
+    echo "could not fetch Profile $name from github; check Git access and source.ref" >&2
+    return 1
+  fi
+  fetched=$(git -C "$repo" rev-parse --verify FETCH_HEAD^{commit}) || return 1
+  [ "$fetched" = "$ref" ] || { echo "fetched commit does not match catalog ref for $name" >&2; return 1; }
+  git -C "$repo" sparse-checkout init --no-cone >/dev/null 2>&1 || { echo "git sparse-checkout is required for Profile application" >&2; return 1; }
+  git -C "$repo" sparse-checkout set --no-cone -- "$path" >/dev/null 2>&1 || return 1
+  git -C "$repo" checkout -q --detach "$ref" || return 1
+  profile_dir="$repo/$path"
+  test -d "$profile_dir" || { echo "Profile path not found at catalog ref: $path" >&2; return 1; }
+  printf '%s\n' "$profile_dir" >"$temporary/$name.directory"
+}
+
+validate_profile() {
+  name=$1 profile_dir=$(cat "$temporary/$name.directory") manifest="$profile_dir/profile.yaml" meta="$temporary/$name.profile" catalog="$temporary/$name.catalog"
+  test -f "$manifest" || { echo "fetched Profile $name is missing profile.yaml" >&2; return 1; }
+  parse_yaml profile "$manifest" "$meta" || return 1
+  for key in schema_version name version description capabilities lifecycle.apply_after lifecycle.apply_in contributions.environment; do
+    meta_has "$meta" "$key" || { echo "$manifest: missing required field $key" >&2; return 1; }
+  done
+  meta_list_has_item "$meta" capabilities || { echo "$manifest: capabilities must not be empty" >&2; return 1; }
+  [ "$(meta_value "$meta" schema_version)" = 1 ] || { echo "$manifest: unsupported schema_version" >&2; return 1; }
+  [ "$(meta_value "$meta" name)" = "$name" ] || { echo "$manifest: name must match selection" >&2; return 1; }
+  [ "$(meta_value "$meta" lifecycle.apply_after)" = technology_selection ] || { echo "$manifest: invalid lifecycle.apply_after" >&2; return 1; }
+  [ "$(meta_value "$meta" lifecycle.apply_in)" = IMPLEMENTATION_READY ] || { echo "$manifest: invalid lifecycle.apply_in" >&2; return 1; }
+  [ "$(meta_value "$meta" contributions.environment)" = environment/ ] || { echo "$manifest: invalid contributions.environment" >&2; return 1; }
+  reapply=$(meta_value "$meta" reapply); [ -z "$reapply" ] && reapply=fail
+  [ "$reapply" = fail ] || { echo "$manifest: unsupported reapply value" >&2; return 1; }
+  for field in name version description; do
+    [ "$(meta_value "$catalog" "$field")" = "$(meta_value "$meta" "$field")" ] || { echo "catalog/payload mismatch for $name: $field" >&2; return 1; }
+  done
+  meta_list_equal capabilities "$catalog" "$meta" || { echo "catalog/payload mismatch for $name: capabilities" >&2; return 1; }
+  meta_list_equal matches "$catalog" "$meta" || { echo "catalog/payload mismatch for $name: matches" >&2; return 1; }
+  environment="$profile_dir/environment"
+  test -d "$environment" || { echo "$manifest: missing environment/" >&2; return 1; }
+  find "$environment" -mindepth 1 -type d -print -quit | grep -q . && { echo "$manifest: environment/ must be flat" >&2; return 1; }
+  find "$environment" -type l -print -quit | grep -q . && { echo "$manifest: symbolic links are not supported" >&2; return 1; }
+  find "$environment" -type f -perm -111 -print -quit | grep -q . && { echo "$manifest: executable files are not supported" >&2; return 1; }
+  find "$environment" -type f -print -quit | grep -q . || { echo "$manifest: environment/ must contribute a file" >&2; return 1; }
+  find "$environment" -maxdepth 1 -type f -print >"$temporary/$name.files"
+  while IFS= read -r file; do case "${file##*/}" in pyproject.toml|*.toml|*.ini|*.cfg|*.yaml|*.yml|*.json) ;; *) echo "$manifest: unsupported environment file: ${file##*/}" >&2; return 1;; esac; done <"$temporary/$name.files"
+}
+
+protected_path() {
+  case "$1" in AGENTS.md|MOCCA.md|docs/*|specs/*|scripts/*|profiles/catalog/*) return 0;; *) test -e "$workspace/$1";; esac
+}
+
+applied=$(read_applied_profiles) || exit 1
+while IFS= read -r name; do
+  profile_is_applied "$applied" "$name" && { echo "profile already applied: $name" >&2; exit 1; }
+  validate_catalog "$name"
+done <"$selected"
+while IFS= read -r name; do fetch_profile "$name"; done <"$selected"
+while IFS= read -r name; do validate_profile "$name"; done <"$selected"
+
+while IFS= read -r name; do
+  meta="$temporary/$name.profile"
+  while IFS= read -r dependency; do
+    [ -n "$dependency" ] || continue
+    if ! profile_is_applied "$applied" "$dependency" && ! grep -Fqx "$dependency" "$selected"; then
+      echo "profile $name requires $dependency; add --profiles $dependency before --profiles $name" >&2; exit 1
+    fi
+    if grep -Fqx "$dependency" "$selected" && ! awk -v before="$dependency" -v current="$name" '$0 == before { found = 1 } $0 == current { exit !found }' "$selected"; then
+      echo "profile $name requires $dependency before it in --profiles order" >&2; exit 1
+    fi
+  done <<EOF
+$(awk -F '\t' '$1 == "dependencies" { print $2 }' "$meta")
+EOF
+  while IFS= read -r conflict; do
+    [ -n "$conflict" ] || continue
+    if profile_is_applied "$applied" "$conflict" || grep -Fqx "$conflict" "$selected"; then echo "profile conflict: $name conflicts with $conflict" >&2; exit 1; fi
+  done <<EOF
+$(awk -F '\t' '$1 == "conflicts" { print $2 }' "$meta")
+EOF
+done <"$selected"
+
+paths="$temporary/paths"; : >"$paths"
+while IFS= read -r name; do
+  profile_dir=$(cat "$temporary/$name.directory")
+  while IFS= read -r file; do
+    relative=${file#"$profile_dir/environment/"}
+    protected_path "$relative" && { echo "profile $name attempts to overwrite protected or existing path: $relative" >&2; exit 1; }
+    if grep -Fq "|$relative" "$paths"; then echo "profile collision: $name and $(awk -F '|' -v p="$relative" '$2 == p { print $1; exit }' "$paths") both contribute $relative" >&2; exit 1; fi
+    printf '%s|%s|%s\n' "$name" "$relative" "$file" >>"$paths"
+  done <"$temporary/$name.files"
+done <"$selected"
+
+while IFS='|' read -r name relative file; do cp "$file" "$workspace/$relative"; printf '%s\n' "$workspace/$relative" >>"$written"; done <"$paths"
+new=$(awk 'NR > 1 { printf ", " } { printf "%s", $0 } END { if (NR) print "" }' "$selected")
+[ "$applied" = none ] || new="$applied, $new"
+state="$temporary/MOCCA.md"
+awk -v value="$new" '/^\*\*Applied profiles:\*\* / { print "**Applied profiles:** " value; next } { print }' "$workspace/MOCCA.md" >"$state"
+mv "$state" "$workspace/MOCCA.md"
+committed=true
+echo "Applied Profiles: $new"

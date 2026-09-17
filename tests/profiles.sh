@@ -4,69 +4,75 @@ set -eu
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
-
 repo="$work/repo"
 cp -R "$root" "$repo"
-cp -R "$repo/tests/fixtures/profiles/." "$repo/profiles/"
+chmod +x "$repo/scripts/bootstrap" "$repo/templates/core/scripts/apply-profile" "$repo/tests/fixtures/fake-git"
+mkdir -p "$work/bin"
+cp "$repo/tests/fixtures/fake-git" "$work/bin/git"
+chmod +x "$work/bin/git"
 
-assert_fails_without_destination() {
-  destination=$1
-  shift
-  if "$repo/scripts/bootstrap" "$destination" "$@" >/dev/null 2>&1; then
-    echo "expected bootstrap failure: $*" >&2
-    exit 1
-  fi
-  test ! -e "$destination"
-}
+grep -Fq 'Profile Catalog Contract v1' "$repo/docs/profile-catalog-contract-v1.md"
+grep -Fq 'Commit A' "$repo/docs/profile-catalog-contract-v1.md"
+grep -Fq 'scripts/apply-profile' "$repo/templates/core/docs/technology.md"
+test -f "$repo/templates/core/profiles/catalog/README.md"
 
 "$repo/scripts/bootstrap" "$work/core" >/dev/null
-test -f "$work/core/MOCCA.md"
-test ! -e "$work/core/pyproject.toml"
+test -x "$work/core/scripts/apply-profile"
+test -d "$work/core/profiles/catalog"
+grep -Fqx '**Applied profiles:** none' "$work/core/MOCCA.md"
 
-"$repo/scripts/bootstrap" "$work/with-profile" --profiles python-django >/dev/null
-test -f "$work/with-profile/pyproject.toml"
-test -f "$work/with-profile/uv.lock"
-test ! -e "$work/with-profile/app"
-test ! -e "$work/with-profile/manage.py"
-test ! -e "$work/with-profile/config"
-
-"$repo/scripts/bootstrap" "$work/existing" >/dev/null
-"$repo/scripts/bootstrap" "$work/existing" --profiles python-django >/dev/null
-test -f "$work/existing/pyproject.toml"
-test ! -e "$work/existing/app"
-if "$repo/scripts/bootstrap" "$work/existing" --profiles python-django >/dev/null 2>&1; then
-  echo "expected reapplication failure" >&2
+if "$work/core/scripts/apply-profile" --profiles base >"$work/gated.out" 2>"$work/gated.err"; then
+  echo "expected phase gate failure" >&2
   exit 1
 fi
+grep -Fq 'IMPLEMENTATION_READY' "$work/gated.err"
+test ! -e "$work/core/base.toml"
 
-assert_fails_without_destination "$work/missing" --profiles does-not-exist
-assert_fails_without_destination "$work/invalid-manifest" --profiles invalid-manifest
-assert_fails_without_destination "$work/repeated" --profiles python-django --profiles python-django
-assert_fails_without_destination "$work/missing-dependency" --profiles needs-base
-assert_fails_without_destination "$work/misordered" --profiles needs-base --profiles base
-assert_fails_without_destination "$work/conflict" --profiles conflict-a --profiles conflict-b
-assert_fails_without_destination "$work/collision" --profiles collision-a --profiles collision-b
-assert_fails_without_destination "$work/unsupported-file" --profiles core-collision
-assert_fails_without_destination "$work/subdirectory" --profiles subdirectory
-assert_fails_without_destination "$work/source-file" --profiles source-file
-
-chmod +x "$repo/profiles/executable/environment/tool.toml"
-assert_fails_without_destination "$work/executable" --profiles executable
-
-ln -s tool.toml "$repo/profiles/symlink/environment/link.toml"
-assert_fails_without_destination "$work/symlink" --profiles symlink
-
-mkdir "$work/not-mocca"
-cp "$repo/README.md" "$work/not-mocca/file"
-if "$repo/scripts/bootstrap" "$work/not-mocca" --profiles python-django >/dev/null 2>&1; then
-  echo "expected non-Mocca destination failure" >&2
+if "$repo/scripts/bootstrap" "$work/staging-failure" --profiles base >"$work/staging.out" 2>"$work/staging.err"; then
+  echo "expected staging Profile failure" >&2
   exit 1
 fi
-test ! -e "$work/not-mocca/pyproject.toml"
+grep -Fq 'Profile not available in local catalog: base' "$work/staging.err"
+test ! -e "$work/staging-failure"
 
-"$repo/scripts/bootstrap" "$work/core-preflight" >/dev/null
-if "$repo/scripts/bootstrap" "$work/core-preflight" --profiles core-collision >/dev/null 2>&1; then
-  echo "expected existing workspace preflight failure" >&2
+sed -i 's/\*\*Current phase:\*\* `DISCOVERY`/**Current phase:** `IMPLEMENTATION_READY`/' "$work/core/MOCCA.md"
+ref=0123456789012345678901234567890123456789
+mkdir -p "$work/core/profiles/catalog"
+cp "$repo/tests/fixtures/profiles/base/profile.yaml" "$work/remote-profile.yaml"
+cp -R "$repo/tests/fixtures/profiles/base" "$work/remote-base"
+
+cat >"$work/core/profiles/catalog/base.yaml" <<EOF
+schema_version: 1
+name: base
+version: 1.0.0
+description: Test base Profile.
+
+capabilities:
+  - test:base
+
+matches: []
+
+source:
+  provider: github
+  repository: example/profiles
+  path: profiles/base
+  ref: $ref
+EOF
+
+MOCCA_FAKE_GIT_REF="$ref" MOCCA_FAKE_PROFILE="$work/remote-base" PATH="$work/bin:$PATH" "$work/core/scripts/apply-profile" --profiles base >/dev/null
+test -f "$work/core/base.toml"
+grep -Fqx '**Applied profiles:** base' "$work/core/MOCCA.md"
+
+if MOCCA_FAKE_GIT_REF="$ref" MOCCA_FAKE_PROFILE="$work/remote-base" PATH="$work/bin:$PATH" "$work/core/scripts/apply-profile" --profiles base >"$work/reapply.out" 2>"$work/reapply.err"; then
+  echo "expected reapply failure" >&2
   exit 1
 fi
-test ! -e "$work/core-preflight/app"
+grep -Fq 'profile already applied: base' "$work/reapply.err"
+
+"$repo/scripts/bootstrap" "$work/empty" >/dev/null
+if "$repo/scripts/bootstrap" "$work/empty" --profiles base >"$work/unknown.out" 2>"$work/unknown.err"; then
+  echo "expected unavailable Profile failure" >&2
+  exit 1
+fi
+grep -Fq 'Profile application requires Engineering State IMPLEMENTATION_READY' "$work/unknown.err"
+test ! -e "$work/empty/base.toml"

@@ -1,8 +1,8 @@
 # Profile Contract v1
 
-A Profile is a local, optional, declarative capability pack. It materializes
-an explicitly selected technology or workflow; it never selects technology,
-changes Mocca Core, runs hooks, or installs remote content.
+A Profile is an optional, declarative capability pack. Its payload may be
+fetched on demand from a local Catalog entry after explicit selection. It
+never selects technology, changes Mocca Core, or runs hooks.
 
 ## Layout
 
@@ -18,9 +18,9 @@ select, or pre-shape the product source tree. Product source is created during
 `IMPLEMENTATION` from approved specifications, architecture, ADRs, and
 decisions.
 
-`environment/` contains only additive engineering configuration. `README.md` explains prerequisites,
-what is contributed, and how to verify it. Commands documented there are not
-executed automatically by Mocca.
+`environment/` contains declarative engineering configuration only.
+`README.md` explains prerequisites, what is contributed, and how to verify it.
+Commands documented there are not executed automatically by Mocca.
 
 ## Manifest
 
@@ -65,8 +65,14 @@ expressions.
 
 `environment/` is flat. It must contain at least one regular, non-executable
 file and may not contain subdirectories or symbolic links. Its allowlist is
-`pyproject.toml`, `uv.lock`, and files ending in `.toml`, `.ini`, `.cfg`,
-`.yaml`, `.yml`, or `.json`.
+`pyproject.toml` and files ending in `.toml`, `.ini`, `.cfg`, `.yaml`, `.yml`,
+or `.json`.
+
+Generated or resolved project artifacts belonging to the consuming project
+must not be contributed by a Profile. This includes dependency lockfiles such
+as `uv.lock`, `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`,
+`poetry.lock`, `Cargo.lock`, and `Gemfile.lock`. A project may generate and
+version its own lockfile when its approved workflow requires it.
 
 Profiles must not contribute source files, scripts, hooks, application trees,
 routes, settings, models, migrations, views, forms, product templates, UI,
@@ -76,22 +82,47 @@ do not belong in a v1 Profile contribution.
 
 ## Selection and matching
 
-`matches` is a simple AND list of capability tokens. A profile with
-`language:python` and `framework:django` matches only when both are part of
-the approved technology direction. An empty list is not technology-filtered.
-Matching offers candidates; it never applies one automatically.
+`matches` is a simple AND list of capability tokens. A Profile is compatible
+when every `matches` token occurs literally in the Approved capabilities:
 
-After technology selection, inspect local Profiles and offer compatible ones
-before implementation. If an engineer rejects a compatible Profile, clarify
+```text
+profile.matches ⊆ approved_capabilities
+```
+
+Additional approved capabilities do not invalidate a Profile. For example, a
+Profile matching `language:python` and `framework:django` remains compatible
+when `database:sqlite` is also approved. Tokens use an open
+`responsibility:value` namespace; matching is exact, with no fuzzy matching,
+framework-specific inference, NLP, or closed taxonomy. An empty `matches` list
+is not technology-filtered. Matching offers candidates; it never applies one
+automatically.
+
+After technology selection, inspect local Catalog entries and offer compatible ones
+before the next lifecycle transition. This Profile Discovery is required after
+technology approval, never applies a Profile automatically, and must be
+resolved before `SPECIFICATION`; if technology is approved during
+`SPECIFICATION`, it must be resolved immediately and before
+`IMPLEMENTATION_READY`. If an engineer rejects a compatible Profile, clarify
 and record the alternative materialization approach before implementation.
 
 Passing `--profiles` to bootstrap is an explicit human selection. It may be
 used for a project whose technology decision already exists outside the new
 workspace; bootstrap does not infer that decision or write its rationale.
+This selection occurs before the workspace lifecycle; `lifecycle.apply_in`
+governs later application through `scripts/apply-profile` in an existing Core
+workspace. The Catalog source is specified by
+[Profile Catalog Contract v1](profile-catalog-contract-v1.md).
+
+Applied Profiles are recorded operationally in `MOCCA.md` as a single ordered
+list. They state that the listed Profiles were selected explicitly and their
+engineering environments were materialized. An applied Profile's declared
+capabilities do not need a second approval, but its rationale, product
+architecture, persistence, authentication, deployment, security, and domain
+decisions remain subject to their normal documentation and approval rules.
 
 ## Composition and safety
 
-Profiles are local and compose in the explicit `--profiles` order. There is no
+Profiles compose in the explicit `--profiles` order. There is no
 dependency solver: every dependency must be selected and appear earlier in
 that order. Missing or misordered dependencies, conflicts, duplicate Profiles,
 and unsupported reapplication fail before destination writes.
@@ -102,6 +133,10 @@ Any collision fails: there is no merge and no last-profile-wins behavior.
 Core paths; any other existing path from `templates/core/` is protected too.
 `reapply: fail` is the only v1 behavior.
 
+`reapply: fail` first checks the Applied Profiles state; collisions remain an
+independent second barrier.
+
 Profile manifests contain no hooks or executable code. There is no registry,
-remote downloader, plugin runtime, or automatic execution of third-party
-verification commands.
+plugin runtime, or automatic execution of third-party verification commands.
+The workspace applicator fetches only explicitly selected, commit-pinned
+GitHub payloads; it never executes their content.

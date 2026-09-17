@@ -51,7 +51,7 @@ The default path is Core only: no language, framework, database, container
 stack, or product source tree is selected.
 
 If a human has already explicitly selected an engineering environment, apply
-local Profiles at bootstrap:
+Catalog-backed Profiles at bootstrap:
 
 ```sh
 ./scripts/bootstrap ../my-project \
@@ -129,9 +129,10 @@ practice live in the [workflow guide](templates/core/docs/workflow.md).
 
 ## Profiles
 
-Profiles are local, declarative, optional, and composable capability packs.
-After technology selection, compatible Profiles are offered to the engineer;
-they are never applied automatically.
+Profiles are declarative, optional, and composable capability packs. Core
+ships local Catalog metadata for discovery; after technology selection,
+compatible Profiles are offered to the engineer and fetched only after
+explicit selection.
 
 > Profiles prepare the approved engineering environment. They must not create,
 > select, or pre-shape the product source tree.
@@ -139,10 +140,10 @@ they are never applied automatically.
 `python-django` is the current official reference Profile. It prepares Python,
 Django, `uv`, linting, and test tooling without copying an application.
 
-Use the [Profile Contract v1](docs/profile-contract-v1.md) for the normative
-contract, safety boundary, composition rules, and third-party authoring model.
-The [Profiles guide](profiles/README.md) is the starting point for available
-and future local Profiles.
+Use the [Profile Contract v1](docs/profile-contract-v1.md) for payload safety
+and composition, and the [Profile Catalog Contract v1](docs/profile-catalog-contract-v1.md)
+for discovery and pinned sources. The [Profiles guide](profiles/README.md) is
+the starting point for available and future Profiles.
 
 ## Chef's Recommendation
 
@@ -190,8 +191,9 @@ development.
 | Lifecycle, Engineering State, Pulse, layout, and implementation practice | [Workflow](templates/core/docs/workflow.md) |
 | Approval boundaries and autonomy | [Autonomy policy](docs/autonomy.md) |
 | Mocca verification contract | [Verification](docs/verification.md) |
-| Profile metadata, safety, and composition | [Profile Contract v1](docs/profile-contract-v1.md) |
-| Using or authoring local Profiles | [Profiles guide](profiles/README.md) |
+| Profile payload safety and composition | [Profile Contract v1](docs/profile-contract-v1.md) |
+| Profile availability and pinned remote sources | [Profile Catalog Contract v1](docs/profile-catalog-contract-v1.md) |
+| Using or authoring Profiles | [Profiles guide](profiles/README.md) |
 | Mocca's layers and extension boundary | [Architecture overview](docs/architecture/overview.md) |
 | What an implementation-ready spec owns | [Specs guide](templates/core/specs/README.md) |
 

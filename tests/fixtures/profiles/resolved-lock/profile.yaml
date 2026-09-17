@@ -1,0 +1,11 @@
+schema_version: 1
+name: resolved-lock
+version: 1.0.0
+description: Test resolved lockfile rejection.
+capabilities:
+  - test:resolved-lock
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+contributions:
+  environment: environment/

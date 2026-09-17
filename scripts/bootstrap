@@ -11,232 +11,50 @@ target=${1-}
 [ -n "$target" ] || usage
 shift
 
-tmp=$(mktemp -d "${TMPDIR:-/tmp}/mocca-bootstrap.XXXXXX")
-trap 'rm -rf "$tmp"' EXIT HUP INT TERM
-selected="$tmp/selected"
-: >"$selected"
-
+selected=''
 while [ "$#" -gt 0 ]; do
-  [ "$1" = "--profiles" ] || usage
+  [ "$1" = --profiles ] || usage
   [ "$#" -ge 2 ] || usage
-  profile=$2
+  name=$2
   shift 2
-
-  case "$profile" in
-    *[!a-z0-9-]* | '' | -* )
-      echo "invalid profile name: $profile" >&2
-      exit 1
-      ;;
-  esac
-
-  if grep -Fqx "$profile" "$selected"; then
-    echo "profile selected more than once: $profile" >&2
-    exit 1
-  fi
-  printf '%s\n' "$profile" >>"$selected"
+  case "$name" in *[!a-z0-9-]*|''|-*) echo "invalid profile name: $name" >&2; exit 1;; esac
+  case " $selected " in *" $name "*) echo "profile selected more than once: $name" >&2; exit 1;; esac
+  selected="$selected $name"
 done
 
-has_profiles=false
-[ -s "$selected" ] && has_profiles=true
-
 workspace_valid() {
-  for path in AGENTS.md MOCCA.md docs/constitution.md docs/discovery.md docs/technology.md docs/integrations.md docs/architecture/README.md docs/architecture/adr/README.md docs/autonomy.md docs/workflow.md specs/README.md scripts/verify; do
-    test -f "$1/$path" || return 1
+  for path in AGENTS.md MOCCA.md docs/constitution.md docs/discovery.md docs/technology.md docs/integrations.md docs/architecture/README.md docs/architecture/adr/README.md docs/autonomy.md docs/workflow.md specs/README.md scripts/verify scripts/apply-profile profiles/catalog; do
+    test -e "$1/$path" || return 1
   done
 }
 
-target_mode=new
 if [ -e "$target" ] && [ "$(find "$target" -mindepth 1 -maxdepth 1 -print -quit)" ]; then
-  if "$has_profiles" && workspace_valid "$target"; then
-    target_mode=existing
-  else
-    echo "destination must be empty or a valid Mocca workspace with --profiles: $target" >&2
-    exit 1
+  if [ -n "$selected" ] && workspace_valid "$target"; then
+    set -- "$target/scripts/apply-profile"
+    for name in $selected; do set -- "$@" --profiles "$name"; done
+    exec "$@"
   fi
+  echo "destination must be empty or a valid Mocca workspace with --profiles: $target" >&2
+  exit 1
 fi
 
-meta_value() {
-  awk -F '\t' -v key="$2" '$1 == key { print substr($0, length($1) + 2); exit }' "$1"
-}
+parent=$(CDPATH= cd -- "$(dirname -- "$target")" && pwd)
+stage=$(mktemp -d "$parent/.mocca-bootstrap.XXXXXX")
+trap 'rm -rf "$stage"' EXIT HUP INT TERM
+cp -R "$root/templates/core/." "$stage/"
+chmod +x "$stage/scripts/verify" "$stage/scripts/apply-profile"
+printf '%s\n' 'Mocca bootstrap staging' >"$stage/.mocca-bootstrap-staging"
 
-meta_has() {
-  grep -Fqx "seen	$2" "$1"
-}
-
-meta_list_has_item() {
-  awk -F '\t' -v key="$2" '$1 == key { found = 1 } END { exit !found }' "$1"
-}
-
-parse_manifest() {
-  manifest=$1
-  output=$2
-
-  awk '
-    function fail(message) { print FILENAME ": " message > "/dev/stderr"; bad = 1; exit 1 }
-    function trim(value) { sub(/^[[:space:]]+/, "", value); sub(/[[:space:]]+$/, "", value); return value }
-    BEGIN {
-      array["capabilities"] = 1; array["matches"] = 1
-      array["dependencies"] = 1; array["conflicts"] = 1
-      scalar["schema_version"] = 1; scalar["name"] = 1; scalar["version"] = 1
-      scalar["description"] = 1; scalar["reapply"] = 1
-    }
-    /^[[:space:]]*$/ || /^[[:space:]]*#/ { next }
-    /^[a-z_]+:/ {
-      key = $0; sub(/:.*/, "", key)
-      value = $0; sub(/^[^:]*:[[:space:]]*/, "", value); value = trim(value)
-      if (!(key in array) && !(key in scalar) && key != "lifecycle" && key != "contributions") fail("unknown key " key)
-      if (++seen[key] != 1) fail("duplicate key " key)
-      section = key
-      if (key in array) {
-        if (value != "" && value != "[]") fail(key " must be a YAML list")
-      } else if (key == "lifecycle" || key == "contributions") {
-        if (value != "") fail(key " must be a YAML mapping")
-      } else {
-        if (value == "") fail(key " must not be empty")
-        print key "\t" value
-      }
-      next
-    }
-    /^  - / {
-      if (!(section in array)) fail("list item outside a list")
-      value = $0; sub(/^  - /, "", value); value = trim(value)
-      if (value == "") fail("empty list item")
-      print section "\t" value
-      next
-    }
-    /^  [a-z_]+:/ {
-      if (section != "lifecycle" && section != "contributions") fail("nested mapping outside lifecycle or contributions")
-      key = $0; sub(/^  /, "", key); sub(/:.*/, "", key)
-      if (section == "lifecycle" && key != "apply_after" && key != "apply_in") fail("unknown lifecycle key " key)
-      if (section == "contributions" && key != "environment") fail("unknown contributions key " key)
-      value = $0; sub(/^  [^:]*:[[:space:]]*/, "", value); value = trim(value)
-      if (value == "") fail("empty " section "." key)
-      composite = section "." key
-      if (++seen[composite] != 1) fail("duplicate key " composite)
-      print composite "\t" value
-      next
-    }
-    { fail("unsupported Profile Contract v1 YAML") }
-    END {
-      if (bad) exit 1
-      for (key in seen) print "seen\t" key
-    }
-  ' "$manifest" >"$output"
-}
-
-protected_path() {
-  case "$1" in
-    AGENTS.md|MOCCA.md|docs/*|specs/*|scripts/verify) return 0 ;;
-    *) test -e "$root/templates/core/$1" ;;
-  esac
-}
-
-validate_profile() {
-  name=$1
-  profile_dir="$root/profiles/$name"
-  manifest="$profile_dir/profile.yaml"
-  meta="$tmp/$name.meta"
-
-  test -d "$profile_dir" || { echo "profile not found: $name" >&2; return 1; }
-  test -f "$manifest" || { echo "profile missing manifest: $name/profile.yaml" >&2; return 1; }
-  parse_manifest "$manifest" "$meta" || return 1
-
-  for key in schema_version name version description capabilities lifecycle contributions; do
-    meta_has "$meta" "$key" || { echo "$manifest: missing required field $key" >&2; return 1; }
-  done
-  meta_list_has_item "$meta" capabilities || { echo "$manifest: capabilities must not be empty" >&2; return 1; }
-  [ "$(meta_value "$meta" schema_version)" = "1" ] || { echo "$manifest: unsupported schema_version" >&2; return 1; }
-  [ "$(meta_value "$meta" name)" = "$name" ] || { echo "$manifest: name must match directory" >&2; return 1; }
-  case "$(meta_value "$meta" lifecycle.apply_after)" in technology_selection) ;; *) echo "$manifest: lifecycle.apply_after must be technology_selection" >&2; return 1;; esac
-  case "$(meta_value "$meta" lifecycle.apply_in)" in IMPLEMENTATION_READY) ;; *) echo "$manifest: lifecycle.apply_in must be IMPLEMENTATION_READY" >&2; return 1;; esac
-  [ "$(meta_value "$meta" contributions.environment)" = "environment/" ] || { echo "$manifest: contributions.environment must be environment/" >&2; return 1; }
-  reapply=$(meta_value "$meta" reapply)
-  [ -z "$reapply" ] && reapply=fail
-  [ "$reapply" = fail ] || { echo "$manifest: unsupported reapply value" >&2; return 1; }
-
-  environment="$profile_dir/environment"
-  test -d "$environment" || { echo "$manifest: missing environment/" >&2; return 1; }
-  find "$environment" -mindepth 1 -type d -print -quit | grep -q . && { echo "$manifest: environment/ must be flat" >&2; return 1; }
-  find "$environment" -type l -print -quit | grep -q . && { echo "$manifest: symbolic links are not supported" >&2; return 1; }
-  find "$environment" -type f -perm -111 -print -quit | grep -q . && { echo "$manifest: executable files are not supported" >&2; return 1; }
-  find "$environment" -type f -print -quit | grep -q . || { echo "$manifest: environment/ must contribute a file" >&2; return 1; }
-  environment_files="$tmp/$name.environment-files"
-  find "$environment" -maxdepth 1 -type f -print >"$environment_files"
-  while IFS= read -r file; do
-    case "${file##*/}" in
-      pyproject.toml|uv.lock|*.toml|*.ini|*.cfg|*.yaml|*.yml|*.json) ;;
-      *) echo "$manifest: unsupported environment file: ${file##*/}" >&2; exit 1 ;;
-    esac
-  done <"$environment_files"
-}
-
-if "$has_profiles"; then
-  while IFS= read -r name; do
-    validate_profile "$name"
-  done <"$selected"
-
-  while IFS= read -r name; do
-    meta="$tmp/$name.meta"
-    while IFS= read -r dependency; do
-      [ -n "$dependency" ] || continue
-      if ! grep -Fqx "$dependency" "$selected"; then
-        echo "profile $name requires $dependency; add --profiles $dependency before --profiles $name" >&2
-        exit 1
-      fi
-      if ! awk -v before="$dependency" -v current="$name" '$0 == before { found = 1 } $0 == current { exit !found }' "$selected"; then
-        echo "profile $name requires $dependency before it in --profiles order" >&2
-        exit 1
-      fi
-    done <<EOF
-$(awk -F '\t' '$1 == "dependencies" { print $2 }' "$meta")
-EOF
-    while IFS= read -r conflict; do
-      [ -n "$conflict" ] || continue
-      if grep -Fqx "$conflict" "$selected"; then
-        echo "profile conflict: $name conflicts with $conflict" >&2
-        exit 1
-      fi
-    done <<EOF
-$(awk -F '\t' '$1 == "conflicts" { print $2 }' "$meta")
-EOF
-  done <"$selected"
-
-  paths="$tmp/paths"
-  : >"$paths"
-  while IFS= read -r name; do
-    environment="$root/profiles/$name/environment"
-    files="$tmp/$name.files"
-    find "$environment" -maxdepth 1 -type f -print >"$files"
-    while IFS= read -r file; do
-      relative=${file#"$environment/"}
-      if protected_path "$relative"; then
-        echo "profile $name attempts to overwrite protected Core path: $relative" >&2
-        exit 1
-      fi
-      if [ "$target_mode" = existing ] && [ -e "$target/$relative" ]; then
-        echo "profile $name collides with existing workspace path: $relative" >&2
-        exit 1
-      fi
-      if grep -Fq "|$relative" "$paths"; then
-        other=$(awk -F '|' -v path="$relative" '$2 == path { print $1; exit }' "$paths")
-        echo "profile collision: $name and $other both contribute $relative" >&2
-        exit 1
-      fi
-      printf '%s|%s\n' "$name" "$relative" >>"$paths"
-    done <"$files"
-  done <"$selected"
+if [ -n "$selected" ]; then
+  set -- "$stage/scripts/apply-profile" --bootstrap-initialization
+  for name in $selected; do set -- "$@" --profiles "$name"; done
+  "$@"
 fi
+rm -f "$stage/.mocca-bootstrap-staging"
 
-if [ "$target_mode" = new ]; then
-  mkdir -p "$target"
-  cp -R "$root/templates/core/." "$target/"
-  chmod +x "$target"/scripts/verify
+if [ -e "$target" ]; then
+  rmdir "$target" 2>/dev/null || { echo "destination changed during bootstrap: $target" >&2; exit 1; }
 fi
-
-if "$has_profiles"; then
-  while IFS= read -r name; do
-    cp -R "$root/profiles/$name/environment/." "$target/"
-  done <"$selected"
-fi
-
+mv "$stage" "$target"
+trap - EXIT HUP INT TERM
 echo "Created Mocca workspace in $target"
