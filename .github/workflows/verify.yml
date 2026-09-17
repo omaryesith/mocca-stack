@@ -11,11 +11,5 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Check
-        run: ./scripts/check
-      - name: Bootstrap tests
-        run: sh -x ./tests/bootstrap.sh
-      - name: Profile tests
-        run: sh -x ./tests/profiles.sh
-      - name: Security
-        run: ./scripts/security
+      - name: Verify
+        run: ./scripts/verify

@@ -4,6 +4,10 @@
 
 > Small footprint. Big attitude.
 
+**Current version:** `v0.1 — Puppy`
+
+*Learning not to chew the furniture yet.* 🐶
+
 English | [Español](README.es.md)
 
 <p align="center">
@@ -15,6 +19,10 @@ coding agents. It helps define a project before implementation technology is
 chosen, so important decisions are explicit and work is verifiable.
 
 **Mocca does not start technology projects. It starts engineering processes.**
+
+Puppy closes the technology-neutral Core and its safe Profile lifecycle; its
+normative [scope](docs/discovery.md) and [release gates](docs/requirements.md)
+define what remains before release.
 
 ## Quick Start
 

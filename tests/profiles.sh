@@ -115,3 +115,110 @@ if "$repo/scripts/bootstrap" "$work/empty" --profiles base >"$work/unknown.out" 
 fi
 grep -Fq 'Profile application requires Engineering State IMPLEMENTATION_READY' "$work/unknown.err"
 test ! -e "$work/empty/base.toml"
+
+ready_workspace() {
+  workspace=$1
+  "$repo/scripts/bootstrap" "$workspace" >/dev/null
+  sed -i 's/\*\*Current phase:\*\* `DISCOVERY`/**Current phase:** `IMPLEMENTATION_READY`/' "$workspace/MOCCA.md"
+}
+
+add_catalog() {
+  workspace=$1 name=$2 fixture=$3
+  capabilities=$(awk '
+    /^capabilities:/ { found = 1; next }
+    found && /^  - / { print; next }
+    found { exit }
+  ' "$fixture/profile.yaml")
+  [ -n "$capabilities" ] || capabilities='  - test:placeholder'
+  {
+    printf '%s\n' 'schema_version: 1'
+    awk '/^(name|version|description):/' "$fixture/profile.yaml"
+    printf '%s\n' '' 'capabilities:' "$capabilities" '' 'matches: []' '' 'source:'
+    printf '%s\n' '  provider: github' '  repository: example/profiles' '  path: profiles/base' "  ref: $ref"
+  } >"$workspace/profiles/catalog/$name.yaml"
+}
+
+assert_unchanged() {
+  workspace=$1
+  grep -Fqx '**Applied profiles:** none' "$workspace/MOCCA.md"
+  test -z "$(find "$workspace" -maxdepth 1 -name '*.toml' -print -quit)"
+}
+
+expect_failure() {
+  workspace=$1 fixture=$2 expected=$3
+  shift 3
+  if MOCCA_FAKE_GIT_REF="$ref" MOCCA_FAKE_PROFILE="$fixture" PATH="$work/bin:$PATH" "$workspace/scripts/apply-profile" "$@" >"$workspace/out" 2>"$workspace/err"; then
+    echo "expected Profile failure: $*" >&2
+    exit 1
+  fi
+  grep -Fq "$expected" "$workspace/err"
+  assert_unchanged "$workspace"
+}
+
+fixture="$repo/tests/fixtures/profiles"
+
+case_workspace="$work/invalid-manifest"
+ready_workspace "$case_workspace"
+add_catalog "$case_workspace" invalid-manifest "$fixture/invalid-manifest"
+expect_failure "$case_workspace" "$fixture/invalid-manifest" 'missing required field capabilities' --profiles invalid-manifest
+
+case_workspace="$work/missing-dependency"
+ready_workspace "$case_workspace"
+add_catalog "$case_workspace" needs-base "$fixture/needs-base"
+expect_failure "$case_workspace" "$fixture/needs-base" 'profile needs-base requires base' --profiles needs-base
+
+case_workspace="$work/wrong-dependency-order"
+ready_workspace "$case_workspace"
+add_catalog "$case_workspace" needs-base "$fixture/needs-base"
+add_catalog "$case_workspace" base "$fixture/base"
+expect_failure "$case_workspace" "$fixture/needs-base" 'profile needs-base requires base before it' --profiles needs-base --profiles base
+
+case_workspace="$work/conflict"
+ready_workspace "$case_workspace"
+add_catalog "$case_workspace" conflict-a "$fixture/conflict-a"
+add_catalog "$case_workspace" conflict-b "$fixture/conflict-b"
+expect_failure "$case_workspace" "$fixture/conflict-a" 'profile conflict: conflict-a conflicts with conflict-b' --profiles conflict-a --profiles conflict-b
+
+case_workspace="$work/collision"
+ready_workspace "$case_workspace"
+add_catalog "$case_workspace" collision-a "$fixture/collision-a"
+add_catalog "$case_workspace" collision-b "$fixture/collision-b"
+expect_failure "$case_workspace" "$fixture/collision-a" 'profile collision: collision-b and collision-a both contribute shared.toml' --profiles collision-a --profiles collision-b
+
+case_workspace="$work/catalog-mismatch"
+ready_workspace "$case_workspace"
+add_catalog "$case_workspace" base "$fixture/base"
+sed -i 's/description: Test base Profile\./description: Catalog mismatch./' "$case_workspace/profiles/catalog/base.yaml"
+expect_failure "$case_workspace" "$fixture/base" 'catalog/payload mismatch for base: description' --profiles base
+
+case_workspace="$work/unsupported-environment"
+ready_workspace "$case_workspace"
+add_catalog "$case_workspace" core-collision "$fixture/core-collision"
+expect_failure "$case_workspace" "$fixture/core-collision" 'unsupported environment file: readme.txt' --profiles core-collision
+
+case_workspace="$work/subdirectory"
+ready_workspace "$case_workspace"
+add_catalog "$case_workspace" subdirectory "$fixture/subdirectory"
+expect_failure "$case_workspace" "$fixture/subdirectory" 'environment/ must be flat' --profiles subdirectory
+
+case_workspace="$work/resolved-lock"
+ready_workspace "$case_workspace"
+add_catalog "$case_workspace" resolved-lock "$fixture/resolved-lock"
+expect_failure "$case_workspace" "$fixture/resolved-lock" 'unsupported environment file: uv.lock' --profiles resolved-lock
+
+case_workspace="$work/source-file"
+ready_workspace "$case_workspace"
+add_catalog "$case_workspace" source-file "$fixture/source-file"
+expect_failure "$case_workspace" "$fixture/source-file" 'unsupported environment file: main.py' --profiles source-file
+
+chmod +x "$repo/tests/fixtures/profiles/executable/environment/tool.toml"
+case_workspace="$work/executable"
+ready_workspace "$case_workspace"
+add_catalog "$case_workspace" executable "$fixture/executable"
+expect_failure "$case_workspace" "$fixture/executable" 'executable files are not supported' --profiles executable
+
+ln -s tool.toml "$repo/tests/fixtures/profiles/symlink/environment/link.toml"
+case_workspace="$work/symlink"
+ready_workspace "$case_workspace"
+add_catalog "$case_workspace" symlink "$fixture/symlink"
+expect_failure "$case_workspace" "$fixture/symlink" 'symbolic links are not supported' --profiles symlink

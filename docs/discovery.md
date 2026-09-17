@@ -1,4 +1,4 @@
-# Discovery
+# Mocca v0.1 — Puppy discovery
 
 ## Problem statement
 
@@ -31,17 +31,41 @@ and coding agents define a project before selecting its implementation stack.
 - Keep the process small enough to be useful to its own maintainers and other
   developers using coding agents.
 
-## Scope
+## v0.1 scope
 
-Mocca provides a technology-neutral workspace, disciplined discovery and
-specification workflow, bounded autonomy, deterministic verification, and
-optional capability packs.
+Puppy includes:
+
+- A technology-neutral Core, workspace bootstrap, Engineering State, explicit
+  approval gates, bounded autonomy, Project Pulse, and deterministic
+  verification.
+- Clarification exit guidance; Spec-Driven Development, test-first practice
+  for reasonably testable behavior, and vertical checkpoints.
+- Product source separation from Core, with `app/` as the default for simple
+  applications.
+- Profile Contract v1, Profile Catalog Contract v1, Approved capabilities,
+  deterministic matching, Profile Discovery, human selection, Applied
+  Profiles, remote Profile Application, and `scripts/apply-profile`.
+- The official `python-django` Profile, graceful degradation, and Chef's
+  Recommendation.
+- Dogfooding, an English canonical README with Spanish human onboarding, and
+  CI verification.
 
 ## Non-goals
 
-Mocca is not an application framework, project generator, agent runtime,
-custom CLI, MCP bundle, or replacement for framework tooling. Adopting Mocca
-into an existing project is also out of scope for v0.1.
+Puppy excludes:
+
+- Existing-project adoption; a Profile registry, marketplace, multiple
+  catalogs, automatic catalog updates, remote search, non-GitHub providers,
+  dependency solver, or Profile upgrades.
+- Executable hooks or plugins; an agent runtime or orchestrator; host
+  provisioning, automatic tool installation, or a global doctor.
+- `docker-make`, or Dockerfile, Compose, or Makefile support in Profile
+  Contract v1.
+- Full normative localization, official multi-harness support, or a formal
+  CLI, installer, or package manager.
+
+Mocca is not an application framework, project generator, agent runtime, MCP
+bundle, or replacement for framework tooling.
 
 ## Constraints
 
@@ -60,6 +84,11 @@ into an existing project is also out of scope for v0.1.
 > implementation-ready specification, and verify the workspace without
 > repeated out-of-band instructions.
 
+For Puppy release, this must be demonstrated in a clean environment through
+an approved implementation and verification, without hidden dependence on the
+maintainer's installed integrations. The observable release gates live in
+[requirements.md](requirements.md).
+
 ## Risks
 
 1. **Process bloat:** Mocca becomes more ceremonial than useful.
@@ -76,6 +105,6 @@ into an existing project is also out of scope for v0.1.
 
 ## Open questions
 
-No material question blocks v0.1 discovery. Existing-project adoption and a
-profile-application mechanism are deliberately deferred rather than implied
-by this scope.
+No material product question blocks Puppy. General public distribution remains
+blocked while the official `python-django` Profile source is private; this is
+a release-access caveat, not a new product capability.

@@ -4,6 +4,10 @@
 
 > Small footprint. Big attitude.
 
+**Versión actual:** `v0.1 — Puppy`
+
+*Todavía aprendiendo que no debo morder los muebles.* 🐶
+
 [English](README.md) | Español
 
 > Esta es una traducción para lectores humanos. `README.md` y la documentación
@@ -19,6 +23,10 @@ implementación, para que las decisiones importantes sean explícitas y el
 trabajo pueda verificarse.
 
 **Mocca does not start technology projects. It starts engineering processes.**
+
+Puppy cierra el Core technology-neutral y su lifecycle seguro de Profiles; el
+[scope](docs/discovery.md) y los [release gates](docs/requirements.md)
+normativos definen lo que falta antes del release.
 
 ## Inicio rápido
 
