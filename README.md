@@ -1,3 +1,5 @@
+<div align="center">
+
 # Mocca
 
 **Reusable Agentic Engineering Stack**
@@ -9,6 +11,8 @@
 *Learning not to chew the furniture yet.* 🐶
 
 English | [Español](README.es.md)
+
+</div>
 
 <p align="center">
   <img src="assets/mocca-yorkie.png" alt="Mocca, the Yorkie engineering mascot" width="300">
