@@ -10,6 +10,11 @@ During `IMPLEMENTATION`, read and update Project Pulse in `MOCCA.md` as the
 resume index for factual progress. Specifications remain authoritative; Pulse
 does not change scope, architecture, approval, or Engineering State.
 
-Run `./scripts/verify` before declaring work complete. Do not duplicate
-Ponytail, Graphify, or Spec Kit instructions: use those tools for their own
-responsibilities.
+Run `./scripts/verify` before declaring work complete.
+
+Use a recommended capability only when the active harness exposes it and it
+materially improves the current operation. Otherwise use the documented Core
+fallback without repeated warnings. Never claim an unavailable capability was
+used; probe personal installation paths, `HOME`, or prior sessions; or install,
+provision, enable, or modify the host automatically. Stop only an operation
+that truly requires a missing capability, with one clear actionable error.

@@ -159,12 +159,16 @@ dependencies.
 | Spec-driven workflow | GitHub Spec Kit |
 | Current library documentation | Context7 |
 | Repository context | GitHub MCP, when useful |
+| Operational environment | Docker, when it provides concrete value |
 | Confidence and autonomy | Deterministic verification and bounded autonomy |
 
 > Mocca cares about responsibilities, not brands.
 
-MCP integrations are opt-in. Use a recommended tool only when it improves the
-responsibility at hand; bootstrap installs none of them.
+MCP integrations are opt-in. Use a recommended tool only when the active
+harness exposes it and it materially improves the responsibility at hand;
+otherwise use Mocca's Core fallback. Bootstrap installs and probes none of
+them. Docker is recommended, not required; its future materialization belongs
+to an optional Profile, not Core.
 
 ## Dogfooding
 
