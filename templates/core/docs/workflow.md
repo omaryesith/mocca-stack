@@ -81,6 +81,21 @@ current cut is implemented but required verification evidence remains pending.
 `done` means all defined checkpoints for that spec are complete and all
 required verification has passed.
 
+Verification evidence is valid only when the required command completed with
+exit status 0. A checkpoint may close only after its required verification
+passes. A known non-zero result keeps the affected checkpoint open or reopens
+it: record the failed command and concrete result, keep Pulse `in_progress`
+while safe corrective work remains, or use `blocked` only when work cannot
+safely continue. Never leave Pulse `done`, declare the spec complete, claim
+verification success, or claim implementation completion while any required
+verification failure is known. Do not infer verification success from prior
+successful runs, partial output, documentation state, expected state, or an
+intent to run verification.
+
+Pulse may be `done` only when all checkpoints are closed, every required
+verification command completed with exit status 0, and no known failing test
+or verification remains.
+
 Define coarse checkpoints from the spec or implementation plan before
 `IMPLEMENTATION` begins; do not use percentages, task history, estimates, or
 invented detail. Each checkpoint represents an observable capability and needs

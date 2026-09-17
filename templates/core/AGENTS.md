@@ -11,6 +11,9 @@ resume index for factual progress. Specifications remain authoritative; Pulse
 does not change scope, architecture, approval, or Engineering State.
 
 Run `./scripts/verify` before declaring work complete.
+Do not declare verification success, checkpoint closure, spec completion, or
+Project Pulse `done` unless all required verification commands completed with
+exit status 0 and no known failures remain.
 
 Use a recommended capability only when the active harness exposes it and it
 materially improves the current operation. Otherwise use the documented Core

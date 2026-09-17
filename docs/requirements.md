@@ -12,7 +12,7 @@ under the current autonomy policy; v0.1 adds no approval metadata or workflow.
 | FR-2 | The workspace exposes discoverable instructions, Engineering State, approval boundaries, Project Pulse, discovery and technology guidance, architecture/ADR and specification locations, and `scripts/verify`. |
 | FR-3 | The workspace guides a project through Discovery, technology selection, required Profile Discovery, Specification, Implementation Ready, Implementation, and verification without product implementation in earlier phases. |
 | FR-4 | Generated `./scripts/verify` validates the engineering-workspace contract before an implementation stack exists. |
-| FR-5 | The workflow defines bounded implementation autonomy, test-first practice for reasonably testable behavior, vertical checkpoints, and verification-backed closure. |
+| FR-5 | The workflow defines bounded implementation autonomy, test-first practice for reasonably testable behavior, vertical checkpoints, and verification-backed closure: a checkpoint closes only after its required command succeeds with exit status 0; a known verification failure invalidates closure and completion. |
 | FR-6 | Core records Approved capabilities, discovers compatible local Catalog entries deterministically, and requires human selection before Profile Application. |
 | FR-7 | `scripts/apply-profile` fetches an explicitly selected, commit-pinned GitHub Profile; validates Catalog/payload parity and Profile Contract v1; materializes only a safe declarative environment; and updates Applied Profiles atomically. |
 | FR-8 | `python-django` provides a Python/Django/uv engineering environment without product-source scaffolding. |
@@ -48,6 +48,9 @@ under the current autonomy policy; v0.1 adds no approval metadata or workflow.
    metadata; compatible Profiles are offered but never applied automatically.
 8. Profile Application rejects unsafe, conflicting, duplicate, malformed, or
    mismatched inputs before workspace writes.
+9. A generated workspace treats only required verification commands that exit
+   0 as successful evidence; a known verification failure keeps the affected
+   checkpoint open and prevents a completion claim or Project Pulse `done`.
 
 ## Traceability
 
@@ -72,7 +75,9 @@ under the current autonomy policy; v0.1 adds no approval metadata or workflow.
 5. A real remote Profile E2E fetches a pinned Profile, validates parity,
    materializes only its environment, and updates Applied Profiles.
 6. Profile Contract security fixtures are exercised.
-7. A full implementation E2E closes vertical checkpoints with verification.
+7. Pending: a full implementation E2E closes vertical checkpoints only after
+   successful required verification, finishes with final verification green,
+   and marks Project Pulse `done` only with no known failures.
 
 The official `python-django` source is currently private. That blocks general
 public distribution until source access is resolved; it does not create a new

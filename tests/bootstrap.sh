@@ -25,6 +25,11 @@ grep -Fq 'Clean-environment E2E' "$target/project/docs/integrations.md"
 grep -Fq 'Otherwise explore the relevant repository files normally' "$target/project/docs/workflow.md"
 grep -Fq 'harness exposes it and it materially improves the work. Otherwise apply the' "$target/project/docs/workflow.md"
 grep -Fq 'Yorkie Principles, specifications, checkpoints, test-first practice, and' "$target/project/docs/workflow.md"
+grep -Fq 'exit status 0' "$target/project/docs/workflow.md"
+grep -Fq 'known non-zero result keeps the affected checkpoint open or reopens' "$target/project/docs/workflow.md"
+grep -Fq 'Never leave Pulse `done`' "$target/project/docs/workflow.md"
+grep -Fq 'Do not declare verification success, checkpoint closure, spec completion, or' "$target/project/AGENTS.md"
+grep -Fq 'exit status 0 and no known failures remain' "$target/project/AGENTS.md"
 
 if grep -Eq 'command -v (codex|ponytail|graphify|specify|docker)|\.codex|\.agents|\$HOME' "$root/scripts/bootstrap"; then
   echo "bootstrap must not probe global capabilities" >&2
