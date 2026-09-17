@@ -19,10 +19,12 @@ grep -Fq 'Specification. Report it once' "$target/project/docs/integrations.md"
 grep -Fq 'without attempting installation, provisioning,' "$target/project/docs/integrations.md"
 grep -Fq 'privilege escalation, service changes' "$target/project/docs/integrations.md"
 grep -Fq 'Docker is required for this operation but is not available in the current environment' "$target/project/docs/integrations.md"
-grep -Fq 'install, provision, enable, or modify the host automatically' "$target/project/AGENTS.md"
+grep -Fq 'or install,' "$target/project/AGENTS.md"
+grep -Fq 'provision, enable, or modify the host automatically' "$target/project/AGENTS.md"
 grep -Fq 'Clean-environment E2E' "$target/project/docs/integrations.md"
 grep -Fq 'Otherwise explore the relevant repository files normally' "$target/project/docs/workflow.md"
-grep -Fq 'Otherwise apply the Yorkie Principles' "$target/project/docs/workflow.md"
+grep -Fq 'harness exposes it and it materially improves the work. Otherwise apply the' "$target/project/docs/workflow.md"
+grep -Fq 'Yorkie Principles, specifications, checkpoints, test-first practice, and' "$target/project/docs/workflow.md"
 
 if grep -Eq 'command -v (codex|ponytail|graphify|specify|docker)|\.codex|\.agents|\$HOME' "$root/scripts/bootstrap"; then
   echo "bootstrap must not probe global capabilities" >&2
