@@ -16,7 +16,20 @@ case "$1" in
   remote) ;;
   fetch) printf '%s\n' "$MOCCA_FAKE_GIT_REF" >"$directory/FETCH_HEAD" ;;
   rev-parse) cat "$directory/FETCH_HEAD" ;;
-  sparse-checkout) ;;
-  checkout) mkdir -p "$directory/profiles"; cp -R "$MOCCA_FAKE_PROFILE" "$directory/profiles/base" ;;
+  sparse-checkout)
+    if [ "$2" = set ]; then
+      for argument in "$@"; do path=$argument; done
+      printf '%s\n' "$path" >"$directory/.fake-git-path"
+    fi
+    ;;
+  checkout)
+    path=$(cat "$directory/.fake-git-path")
+    mkdir -p "$directory/$(dirname "$path")"
+    if [ -n "${MOCCA_FAKE_PROFILE_ROOT-}" ]; then
+      cp -R "$MOCCA_FAKE_PROFILE_ROOT/${path##*/}" "$directory/$path"
+    else
+      cp -R "$MOCCA_FAKE_PROFILE" "$directory/$path"
+    fi
+    ;;
   *) echo "unexpected fake git command: $*" >&2; exit 1 ;;
 esac

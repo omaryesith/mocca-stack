@@ -1,5 +1,7 @@
 #!/bin/sh
 set -eu
 
+echo '==> bootstrap tests'
 ./tests/bootstrap.sh
+echo '==> profile tests'
 ./tests/profiles.sh
