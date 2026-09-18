@@ -42,18 +42,34 @@ git -C "$root" show "$pin:profiles/python-django/profile.yaml" | profile_metadat
 cmp -s "$work/catalog-metadata" "$work/payload-metadata"
 
 catalog_matches() {
-  _tokens=$1
+  _catalog=$1 _tokens=$2
   _matches=$(awk '
     /^matches:/ { section = 1; next }
     /^[^ ]/ { section = 0 }
     section && /^  - / { sub(/^  - /, ""); print }
-  ' "$catalog")
+  ' "$_catalog")
   for _token in $_matches; do
     printf '%s\n' "$_tokens" | tr ' ' '\n' | grep -Fqx "$_token" || return 1
   done
 }
 
-catalog_matches 'language:python framework:django database:sqlite'
+catalog_matches "$catalog" 'language:python framework:django database:sqlite'
+
+docker_pin=f239f26e2402b03886c85216c0c4225374e8de2f
+docker_catalog="$repo/templates/core/profiles/catalog/docker.yaml"
+test -f "$docker_catalog"
+grep -Fqx "  ref: $docker_pin" "$docker_catalog"
+test "${#docker_pin}" -eq 40
+git -C "$root" cat-file -e "$docker_pin^{commit}"
+git -C "$root" cat-file -e "$docker_pin:profiles/docker/profile.yaml"
+profile_metadata <"$docker_catalog" >"$work/docker-catalog-metadata"
+git -C "$root" show "$docker_pin:profiles/docker/profile.yaml" | profile_metadata >"$work/docker-payload-metadata"
+cmp -s "$work/docker-catalog-metadata" "$work/docker-payload-metadata"
+catalog_matches "$docker_catalog" 'containerization:docker'
+if catalog_matches "$docker_catalog" 'containerization:podman'; then
+  echo 'docker Catalog entry must not match another containerization capability' >&2
+  exit 1
+fi
 
 profile_matches() {
   _profile=$1 _tokens=$2
@@ -72,13 +88,14 @@ if profile_matches "$repo/profiles/docker/profile.yaml" 'containerization:podman
   echo 'docker Profile must not match another containerization capability' >&2
   exit 1
 fi
-test ! -e "$repo/templates/core/profiles/catalog/docker.yaml"
 
 "$repo/scripts/bootstrap" "$work/core" >/dev/null
 test -x "$work/core/scripts/apply-profile"
 test -d "$work/core/profiles/catalog"
 test -f "$work/core/profiles/catalog/python-django.yaml"
+test -f "$work/core/profiles/catalog/docker.yaml"
 test ! -e "$work/core/profiles/python-django"
+test ! -e "$work/core/profiles/docker"
 test ! -e "$work/core/environment"
 test ! -e "$work/core/pyproject.toml"
 grep -Fqx '**Applied profiles:** none' "$work/core/MOCCA.md"

@@ -1,0 +1,16 @@
+schema_version: 1
+name: docker
+version: 1.0.0
+description: Docker engineering conventions for containerized development and implementation.
+
+capabilities:
+  - containerization:docker
+
+matches:
+  - containerization:docker
+
+source:
+  provider: github
+  repository: omaryesith/mocca-stack
+  path: profiles/docker
+  ref: f239f26e2402b03886c85216c0c4225374e8de2f

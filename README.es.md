@@ -188,6 +188,7 @@ Profiles disponibles:
 | Profile | Engineering environment | No añade |
 | --- | --- | --- |
 | `python-django` | Python, Django, `uv`, `pyproject.toml`, baseline de lint/testing | `app/`, `manage.py`, models, views, routes, auth o product behavior |
+| `docker` | Docker engineering conventions para containerization aprobada | Dockerfiles, Compose, `.dockerignore`, ejecución de Docker o product behavior |
 
 Consulta [Profile Contract v1](docs/profile-contract-v1.md) para seguridad y
 composición del payload, y [Profile Catalog Contract v1](docs/profile-catalog-contract-v1.md)

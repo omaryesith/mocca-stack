@@ -13,9 +13,9 @@ Read the normative [Profile Contract v1.1](../docs/profile-contract-v1.md) and
 [Profile Catalog Contract v1](../docs/profile-catalog-contract-v1.md) before
 creating or publishing a Profile. Official Profiles use two commits: commit
 the payload first, then pin that payload commit in the Catalog. `python-django`
-is the reference environment Profile. `docker` is a conventions-only payload
-awaiting its Catalog Commit B; it contributes guidance only and will not
-scaffold container artifacts.
+is the reference environment Profile. `docker` is the reference
+conventions-only Profile; it contributes guidance only and does not scaffold
+container artifacts.
 
 The official source is public and can be fetched anonymously. Mocca never
 implements or requests GitHub authentication. Private third-party sources
