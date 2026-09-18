@@ -47,6 +47,9 @@ Puppy includes:
   Profiles, remote Profile Application, and `scripts/apply-profile`.
 - The official `python-django` environment Profile and `docker`
   conventions-only Profile, graceful degradation, and Chef's Recommendation.
+- Environment Readiness before Discovery: deterministic-first capability
+  evidence, explicit degraded-mode acknowledgement, contextual reevaluation,
+  and no host provisioning.
 - Dogfooding, an English canonical README with Spanish human onboarding, and
   CI verification.
 
@@ -105,6 +108,5 @@ maintainer's installed integrations. The observable release gates live in
 
 ## Open questions
 
-No material product question blocks Puppy. Release remains pending the Docker
-Profile Catalog publication and E2E, plus the separate Environment Readiness
-Gate.
+No material product question blocks Puppy. All Puppy release gates are
+complete; v0.1 is ready for release review.

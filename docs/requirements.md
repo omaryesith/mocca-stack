@@ -17,6 +17,7 @@ under the current autonomy policy; v0.1 adds no approval metadata or workflow.
 | FR-7 | `scripts/apply-profile` fetches an explicitly selected, commit-pinned GitHub Profile; validates Catalog/payload parity and Profile Contract v1.1; materializes only safe declared environment and conventions contributions; and updates Applied Profiles atomically. |
 | FR-8 | `python-django` provides a Python/Django/uv engineering environment without product-source scaffolding. |
 | FR-9 | `docker` provides only Docker engineering conventions for an approved `containerization:docker` capability; it does not install or execute Docker or contribute product artifacts. |
+| FR-10 | Before substantive Discovery, the workspace evaluates initial Chef's Recommendations as `available`, `missing`, or `unknown`, records a compact readiness snapshot, and requires explicit human acknowledgement before continuing in degraded mode. |
 
 ## Non-functional requirements
 
@@ -27,6 +28,7 @@ under the current autonomy policy; v0.1 adds no approval metadata or workflow.
 | NFR-3 | Workspace-contract verification is deterministic and callable through `./scripts/verify`; Mocca's own CI uses its root command. |
 | NFR-4 | Recommended and optional capabilities degrade gracefully: Core does not install, provision, or claim unavailable tools, and an unavailable capability blocks only an operation that truly requires it. |
 | NFR-5 | Profile payloads remain optional extensions; Core owns only generic Catalog and application safeguards that serve every generated workspace. |
+| NFR-6 | Capability readiness uses deterministic, side-effect-free evidence when available; absent harness introspection remains `unknown`, never inferred from personal state, model behavior, or prior conversation. |
 
 ## Acceptance criteria
 
@@ -52,6 +54,10 @@ under the current autonomy policy; v0.1 adds no approval metadata or workflow.
 9. A generated workspace treats only required verification commands that exit
    0 as successful evidence; a known verification failure keeps the affected
    checkpoint open and prevents a completion claim or Project Pulse `done`.
+10. A generated workspace exposes an Environment Readiness gate before
+    Discovery, preserves `unknown`, requires acknowledgement for relevant
+    recommended degradation, and reevaluates a capability before an operation
+    that actually requires it.
 
 ## Traceability
 
@@ -62,7 +68,7 @@ under the current autonomy policy; v0.1 adds no approval metadata or workflow.
 | FR-4, NFR-3, AC-3 & AC-5 | Verification constraint, success criterion, verification contract |
 | FR-5 | Primary use case, explicit-decision goal, autonomy policy |
 | FR-6–9, NFR-5, AC-7–8 | Approved Profile Contract and Catalog decisions, ADRs 0003–0005 |
-| NFR-4 | Stay Small; tool-coupling and premature-automation risks |
+| FR-10, NFR-4 & NFR-6, AC-10 | Tool-coupling and premature-automation risks; clean-environment evidence; ADR 0006 |
 
 ## Puppy release gates
 
@@ -79,10 +85,12 @@ under the current autonomy policy; v0.1 adds no approval metadata or workflow.
 7. **PASS** — A full implementation E2E closes vertical checkpoints only after
    successful required verification, finishes with final verification green,
    and marks Project Pulse `done` only with no known failures.
-8. **PENDING** — A real remote `docker` Profile E2E fetches its pinned payload,
+8. **PASS** — A real remote `docker` Profile E2E fetches its pinned payload,
    applies only conventions, and performs no Docker installation or execution.
-9. **PENDING** — The Environment Readiness Gate demonstrates the approved
-   capability-detection behavior without host provisioning.
+9. **PASS** — An Environment Readiness E2E demonstrates the gate before
+   Discovery; deterministic evidence where available; cautious `unknown`;
+   acknowledgement for degradation; localized required-capability blocking;
+   contextual reevaluation; and no host provisioning.
 
 ## Deferred requirements
 

@@ -193,7 +193,8 @@ assert_unchanged() {
   _workspace=$1
   grep -Fqx '**Applied profiles:** none' "$_workspace/MOCCA.md"
   test -z "$(find "$_workspace" -maxdepth 1 -name '*.toml' -print -quit)"
-  test ! -e "$_workspace/.mocca"
+  test -f "$_workspace/.mocca/chef-recommendations.yaml"
+  test ! -e "$_workspace/.mocca/profiles"
 }
 
 expect_failure() {
@@ -256,7 +257,8 @@ ready_workspace "$case_workspace"
 add_catalog "$case_workspace" python-django "$fixture_root/python-django"
 apply_fixture "$case_workspace" --profiles python-django >/dev/null
 test -f "$case_workspace/pyproject.toml"
-test ! -e "$case_workspace/.mocca"
+test -f "$case_workspace/.mocca/chef-recommendations.yaml"
+test ! -e "$case_workspace/.mocca/profiles"
 grep -Fqx '**Applied profiles:** python-django' "$case_workspace/MOCCA.md"
 
 announce 'docker conventions only'
@@ -321,7 +323,8 @@ fi
 grep -Fq 'attempts to overwrite protected or existing path: shared.toml' "$case_workspace/err"
 test -f "$case_workspace/shared.toml"
 grep -Fqx '**Applied profiles:** none' "$case_workspace/MOCCA.md"
-test ! -e "$case_workspace/.mocca"
+test -f "$case_workspace/.mocca/chef-recommendations.yaml"
+test ! -e "$case_workspace/.mocca/profiles"
 
 announce 'conventions rollback'
 case_workspace="$work/conventions-rollback"

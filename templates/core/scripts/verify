@@ -4,8 +4,25 @@ set -eu
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$root"
 
-for path in AGENTS.md MOCCA.md .gitignore docs/constitution.md docs/discovery.md docs/technology.md docs/integrations.md docs/architecture/README.md docs/architecture/adr/README.md docs/autonomy.md docs/workflow.md specs/README.md; do
+for path in AGENTS.md MOCCA.md .gitignore .mocca/chef-recommendations.yaml docs/constitution.md docs/discovery.md docs/technology.md docs/integrations.md docs/architecture/README.md docs/architecture/adr/README.md docs/autonomy.md docs/workflow.md specs/README.md; do
   test -f "$path" || { echo "missing Mocca workspace artifact: $path" >&2; exit 1; }
 done
+
+grep -Fqx 'schema_version: 1' .mocca/chef-recommendations.yaml || { echo 'invalid Chef recommendations schema version' >&2; exit 1; }
+awk '
+  /^  - id: / { id = $3; count[id]++; next }
+  /^    posture: / { posture[id] = $2; next }
+  /^    relevance: / { relevance[id] = $2; next }
+  /^      kind: / { kind[id] = $2; next }
+  /^      identifier: / { identifier[id] = $2 }
+  END {
+    split("ponytail graphify context7 github-mcp", required)
+    for (idx in required) {
+      name = required[idx]
+      if (count[name] != 1 || posture[name] != "recommended" || relevance[name] != "initial" || identifier[name] == "") exit 1
+    }
+    if (kind["ponytail"] != "harness_skill" || kind["graphify"] != "harness_skill" || kind["context7"] != "harness_mcp" || kind["github-mcp"] != "harness_mcp") exit 1
+  }
+' .mocca/chef-recommendations.yaml || { echo 'invalid initial Chef recommendations' >&2; exit 1; }
 
 echo "Mocca workspace contract verified"

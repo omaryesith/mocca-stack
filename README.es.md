@@ -30,7 +30,7 @@ trabajo pueda verificarse.
 
 Puppy establece el Core technology-neutral y su lifecycle seguro de Profiles.
 El [scope](docs/discovery.md) y los [release gates](docs/requirements.md)
-normativos registran la evidencia actual y el trabajo restante de v0.1.
+normativos registran la evidencia completa de v0.1.
 
 ## Inicio rápido
 
@@ -214,17 +214,18 @@ dependencias conceptuales.
 
 > Mocca cares about responsibilities, not brands.
 
-Las integraciones MCP son opt-in. Usa una capability recomendada sólo cuando
-el harness activo la expone y mejora materialmente la responsabilidad actual;
-de lo contrario usa el Core fallback de Mocca. Bootstrap no instala ni inspecciona
-ninguna. Core sigue funcionando sin Ponytail, Graphify, Spec Kit, Context7 o
-MCPs; Mocca no afirma haber usado una capability inexistente ni la provisiona.
+Las integraciones MCP son opt-in. Antes de Discovery, Environment Readiness
+aflora una vez las recommendations iniciales missing o unknown y requiere
+acknowledgement; después Mocca usa su Core fallback sin warnings repetitivos.
+Bootstrap no instala ni inspecciona ninguna. Core sigue funcionando sin
+Ponytail, Graphify, Spec Kit, Context7 o MCPs; Mocca no afirma haber usado una
+capability inexistente ni la provisiona.
 
 Docker es recomendado cuando aporta valor operacional, no es requerido por
 Core, Bootstrap, Discovery ni Specification. Si no está disponible, sólo
 bloquea una operación que realmente requiere Docker; Mocca nunca instala,
-provisiona ni modifica el host. Su futura materialización pertenece a un
-Profile opcional, no a Core.
+provisiona ni modifica el host. Sus engineering conventions pertenecen al
+Profile opcional `docker`, no a product scaffolding de Core.
 
 ## Dogfooding
 

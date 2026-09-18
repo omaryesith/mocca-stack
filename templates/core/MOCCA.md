@@ -3,6 +3,12 @@
 This project starts as an engineering workspace, not an application starter.
 Define the project before selecting its implementation technology.
 
+## Environment Readiness
+
+**Bark mode:** not set
+**Initial gate:** pending
+**Acknowledged degradations:** none
+
 ## Engineering state
 
 **Current phase:** `DISCOVERY`

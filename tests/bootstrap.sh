@@ -7,6 +7,25 @@ trap 'rm -rf "$target"' EXIT
 
 "$root/scripts/bootstrap" "$target/project" >/dev/null
 
+grep -Fqx '**Bark mode:** not set' "$target/project/MOCCA.md"
+grep -Fqx '**Initial gate:** pending' "$target/project/MOCCA.md"
+grep -Fqx '**Acknowledged degradations:** none' "$target/project/MOCCA.md"
+grep -Fqx 'schema_version: 1' "$target/project/.mocca/chef-recommendations.yaml"
+for recommendation in ponytail graphify context7 github-mcp; do
+  grep -Fqx "  - id: $recommendation" "$target/project/.mocca/chef-recommendations.yaml"
+done
+grep -Fq 'Before substantive `DISCOVERY`, resolve Environment Readiness' "$target/project/AGENTS.md"
+grep -Fq 'preserve `unknown`' "$target/project/AGENTS.md"
+grep -Fq 'acknowledgement before `DISCOVERY`' "$target/project/docs/workflow.md"
+grep -Fq 'never relabel it `missing`' "$target/project/docs/workflow.md"
+grep -Fq 'Bark is presentation only' "$target/project/docs/workflow.md"
+grep -Fq 'Bootstrap performs no capability scan' "$target/project/docs/integrations.md"
+grep -Fq 'containerization:docker' "$target/project/docs/integrations.md"
+if grep -Eq 'find[[:space:]]+~|~/\.codex|~/\.agents' "$target/project/AGENTS.md" "$target/project/docs/integrations.md" "$target/project/docs/workflow.md"; then
+  echo "Environment Readiness must not scan personal paths" >&2
+  exit 1
+fi
+
 grep -Fq 'active harness exposes it' "$target/project/AGENTS.md"
 grep -Fq 'Yorkie Principles, specs, checkpoints, test-first, and verification' "$target/project/docs/integrations.md"
 grep -Fq 'explore the repository normally when unavailable' "$target/project/docs/integrations.md"
@@ -38,7 +57,7 @@ if grep -Eq 'command -v (codex|ponytail|graphify|specify|docker)|\.codex|\.agent
   exit 1
 fi
 
-for path in AGENTS.md MOCCA.md .gitignore docs/constitution.md docs/discovery.md docs/technology.md docs/integrations.md docs/architecture/README.md docs/architecture/adr/README.md docs/autonomy.md docs/workflow.md specs/README.md scripts/verify scripts/apply-profile; do
+for path in AGENTS.md MOCCA.md .gitignore .mocca/chef-recommendations.yaml docs/constitution.md docs/discovery.md docs/technology.md docs/integrations.md docs/architecture/README.md docs/architecture/adr/README.md docs/autonomy.md docs/workflow.md specs/README.md scripts/verify scripts/apply-profile; do
   test -f "$target/project/$path"
 done
 

@@ -3,7 +3,50 @@
 Use the light path for trivial changes: understand, change, verify. For a new
 project, work in this order:
 
-`idea -> vision -> scope -> requirements -> constraints -> clarification -> technical options -> technology selection -> architecture -> ADRs -> implementation specs -> implementation`
+`idea -> Environment Readiness -> vision -> scope -> requirements -> constraints -> clarification -> technical options -> technology selection -> architecture -> ADRs -> implementation specs -> implementation`
+
+## Environment Readiness gate
+
+Environment Readiness is a precondition, not an Engineering State. Before
+substantive `DISCOVERY`, read `.mocca/chef-recommendations.yaml`, `MOCCA.md`,
+and `docs/integrations.md`; evaluate only recommendations with
+`relevance: initial`, record a compact snapshot in `MOCCA.md`, and then
+determine the gate result.
+
+Each evaluated capability is exactly `available`, `missing`, or `unknown`.
+Use deterministic, side-effect-free evidence whenever it exists. Do not infer
+availability from model behavior, prior conversation, personal paths, `HOME`,
+sessions, or configuration files. Preserve `unknown` when the active harness
+does not expose deterministic introspection; never relabel it `missing`.
+
+- `READY`: no relevant degradation exists and every capability required now is
+  `available`; begin `DISCOVERY`.
+- `DEGRADED`: no required capability blocks the current work, but one or more
+  relevant recommendations are `missing` or `unknown`. Explain the capability,
+  purpose, impact, fallback, and guidance; obtain explicit human
+  acknowledgement before `DISCOVERY`. After acknowledgement, use the fallback
+  without repeating the same warning.
+- `BLOCKED`: an operation requires a capability that is `missing`, or whose
+  readiness is `unknown`. State whether the capability is unavailable or
+  readiness cannot be verified; acknowledgement alone does not unblock it.
+  Resolve the capability, change the approved approach, or stop only that
+  operation.
+
+The first actionable `DEGRADED` or `BLOCKED` result asks whether future gate
+notifications should bark. Persist `bark_mode` as `enabled` or `disabled` in
+`MOCCA.md`; while unset, ask before persisting it. Bark is presentation only:
+it never changes diagnostics, acknowledgement, blocking, safety, or
+requiredness. With bark enabled, use `ᐢ•ﻌ•ᐢ  BARK!` for `DEGRADED` and
+`ᐢ•ﻌ•ᐢ  BARK!! GRRRR...` for `BLOCKED`, localized when appropriate. With bark
+disabled, show the canonical technical result without the Yorkie signal.
+
+Readiness snapshots are not permanent availability caches. Reevaluate a
+capability mechanically when an approved decision or current operation first
+makes it relevant. A new relevant degradation needs acknowledgement; a
+required `missing` or `unknown` capability blocks only its dependent operation.
+Profile compatibility remains separate from readiness: applying a Profile is
+declarative and inert. For example, the `docker` Profile can apply while Docker
+is absent; only a Docker-dependent operation may later be blocked.
 
 ## Clarification exit
 

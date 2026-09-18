@@ -1,0 +1,50 @@
+schema_version: 1
+
+recommendations:
+  - id: ponytail
+    display_name: Ponytail
+    posture: recommended
+    relevance: initial
+    detection:
+      kind: harness_skill
+      identifier: ponytail
+    purpose: Extended engineering discipline.
+    fallback: Core engineering rules, Yorkie Principles, specs, checkpoints, test-first, and verification.
+    impact: Extended engineering discipline guidance is unavailable.
+    guidance: Expose Ponytail through the active harness.
+
+  - id: graphify
+    display_name: Graphify
+    posture: recommended
+    relevance: initial
+    detection:
+      kind: harness_skill
+      identifier: graphify
+    purpose: Semantic codebase exploration.
+    fallback: Normal repository and file exploration.
+    impact: Semantic codebase exploration is unavailable.
+    guidance: Expose Graphify through the active harness.
+
+  - id: context7
+    display_name: Context7
+    posture: recommended
+    relevance: initial
+    detection:
+      kind: harness_mcp
+      identifier: context7
+    purpose: Current library documentation.
+    fallback: Repository context, available documentation, or explicitly requested external sources.
+    impact: Integrated current-library documentation is unavailable.
+    guidance: Connect Context7 through the active harness.
+
+  - id: github-mcp
+    display_name: GitHub MCP
+    posture: recommended
+    relevance: initial
+    detection:
+      kind: harness_mcp
+      identifier: github
+    purpose: GitHub repository context.
+    fallback: Local repository context and Git when applicable.
+    impact: Integrated GitHub repository context is unavailable.
+    guidance: Connect GitHub MCP through the active harness.
