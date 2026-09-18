@@ -1,0 +1,21 @@
+schema_version: 1
+name: docker
+version: 1.0.0
+description: Docker engineering conventions for containerized development and implementation.
+
+capabilities:
+  - containerization:docker
+
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+
+contributions:
+  conventions: conventions/
+
+matches:
+  - containerization:docker
+
+dependencies: []
+conflicts: []
+reapply: fail

@@ -10,6 +10,10 @@ During `IMPLEMENTATION`, read and update Project Pulse in `MOCCA.md` as the
 resume index for factual progress. Specifications remain authoritative; Pulse
 does not change scope, architecture, approval, or Engineering State.
 
+When work covers a capability represented by an Applied Profile, inspect that
+Profile's conventions under `.mocca/profiles/<profile>/conventions/` before
+making decisions or changes that affect the capability.
+
 Run `./scripts/verify` before declaring work complete.
 Do not declare verification success, checkpoint closure, spec completion, or
 Project Pulse `done` unless all required verification commands completed with

@@ -10,8 +10,10 @@ workspace=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 temporary=$(mktemp -d "${TMPDIR:-/tmp}/mocca-profile.XXXXXX")
 written="$temporary/written"
 : >"$written"
+created_dirs="$temporary/created-dirs"
+: >"$created_dirs"
 committed=false
-trap 'if [ "$committed" = false ]; then while IFS= read -r file; do rm -f "$file"; done <"$written"; fi; rm -rf "$temporary"' EXIT HUP INT TERM
+trap 'if [ "$committed" = false ]; then while IFS= read -r file; do rm -f "$file"; done <"$written"; while IFS= read -r directory; do rmdir "$directory" 2>/dev/null || :; done <"$created_dirs"; fi; rm -rf "$temporary"' EXIT HUP INT TERM
 selected="$temporary/selected"
 : >"$selected"
 bootstrap_initialization=false
@@ -122,7 +124,7 @@ parse_yaml() {
       print section "\t" value; next
     }
     /^  [a-z_]+:/ {
-      allowed = (kind == "profile" && ((section == "lifecycle" && ($0 ~ /^  (apply_after|apply_in):/)) || (section == "contributions" && $0 ~ /^  environment:/))) || (kind == "catalog" && section == "source" && $0 ~ /^  (provider|repository|path|ref):/)
+      allowed = (kind == "profile" && ((section == "lifecycle" && ($0 ~ /^  (apply_after|apply_in):/)) || (section == "contributions" && $0 ~ /^  (environment|conventions):/))) || (kind == "catalog" && section == "source" && $0 ~ /^  (provider|repository|path|ref):/)
       if (!allowed) fail("unsupported nested key")
       key = $0; sub(/^  /, "", key); sub(/:.*/, "", key); value = $0; sub(/^  [^:]*:[[:space:]]*/, "", value); value = trim(value)
       if (value == "") fail("empty " section "." key)
@@ -175,7 +177,7 @@ validate_profile() {
   name=$1 profile_dir=$(cat "$temporary/$name.directory") manifest="$profile_dir/profile.yaml" meta="$temporary/$name.profile" catalog="$temporary/$name.catalog"
   test -f "$manifest" || { echo "fetched Profile $name is missing profile.yaml" >&2; return 1; }
   parse_yaml profile "$manifest" "$meta" || return 1
-  for key in schema_version name version description capabilities lifecycle.apply_after lifecycle.apply_in contributions.environment; do
+  for key in schema_version name version description capabilities lifecycle.apply_after lifecycle.apply_in contributions; do
     meta_has "$meta" "$key" || { echo "$manifest: missing required field $key" >&2; return 1; }
   done
   meta_list_has_item "$meta" capabilities || { echo "$manifest: capabilities must not be empty" >&2; return 1; }
@@ -183,7 +185,11 @@ validate_profile() {
   [ "$(meta_value "$meta" name)" = "$name" ] || { echo "$manifest: name must match selection" >&2; return 1; }
   [ "$(meta_value "$meta" lifecycle.apply_after)" = technology_selection ] || { echo "$manifest: invalid lifecycle.apply_after" >&2; return 1; }
   [ "$(meta_value "$meta" lifecycle.apply_in)" = IMPLEMENTATION_READY ] || { echo "$manifest: invalid lifecycle.apply_in" >&2; return 1; }
-  [ "$(meta_value "$meta" contributions.environment)" = environment/ ] || { echo "$manifest: invalid contributions.environment" >&2; return 1; }
+  environment=$(meta_value "$meta" contributions.environment)
+  conventions=$(meta_value "$meta" contributions.conventions)
+  [ -n "$environment$conventions" ] || { echo "$manifest: contributions must include environment or conventions" >&2; return 1; }
+  [ -z "$environment" ] || [ "$environment" = environment/ ] || { echo "$manifest: invalid contributions.environment" >&2; return 1; }
+  [ -z "$conventions" ] || [ "$conventions" = conventions/ ] || { echo "$manifest: invalid contributions.conventions" >&2; return 1; }
   reapply=$(meta_value "$meta" reapply); [ -z "$reapply" ] && reapply=fail
   [ "$reapply" = fail ] || { echo "$manifest: unsupported reapply value" >&2; return 1; }
   for field in name version description; do
@@ -191,18 +197,39 @@ validate_profile() {
   done
   meta_list_equal capabilities "$catalog" "$meta" || { echo "catalog/payload mismatch for $name: capabilities" >&2; return 1; }
   meta_list_equal matches "$catalog" "$meta" || { echo "catalog/payload mismatch for $name: matches" >&2; return 1; }
-  environment="$profile_dir/environment"
-  test -d "$environment" || { echo "$manifest: missing environment/" >&2; return 1; }
-  find "$environment" -mindepth 1 -type d -print -quit | grep -q . && { echo "$manifest: environment/ must be flat" >&2; return 1; }
-  find "$environment" -type l -print -quit | grep -q . && { echo "$manifest: symbolic links are not supported" >&2; return 1; }
-  find "$environment" -type f -perm -111 -print -quit | grep -q . && { echo "$manifest: executable files are not supported" >&2; return 1; }
-  find "$environment" -type f -print -quit | grep -q . || { echo "$manifest: environment/ must contribute a file" >&2; return 1; }
-  find "$environment" -maxdepth 1 -type f -print >"$temporary/$name.files"
-  while IFS= read -r file; do case "${file##*/}" in pyproject.toml|*.toml|*.ini|*.cfg|*.yaml|*.yml|*.json) ;; *) echo "$manifest: unsupported environment file: ${file##*/}" >&2; return 1;; esac; done <"$temporary/$name.files"
+  if [ -n "$environment" ]; then
+    environment="$profile_dir/environment"
+    test -d "$environment" || { echo "$manifest: missing environment/" >&2; return 1; }
+    find "$environment" -mindepth 1 -type d -print -quit | grep -q . && { echo "$manifest: environment/ must be flat" >&2; return 1; }
+    find "$environment" -type l -print -quit | grep -q . && { echo "$manifest: symbolic links are not supported" >&2; return 1; }
+    find "$environment" -type f -perm -111 -print -quit | grep -q . && { echo "$manifest: executable files are not supported" >&2; return 1; }
+    find "$environment" -type f -print -quit | grep -q . || { echo "$manifest: environment/ must contribute a file" >&2; return 1; }
+    find "$environment" -maxdepth 1 -type f -print >"$temporary/$name.environment.files"
+    while IFS= read -r file; do case "${file##*/}" in pyproject.toml|*.toml|*.ini|*.cfg|*.yaml|*.yml|*.json) ;; *) echo "$manifest: unsupported environment file: ${file##*/}" >&2; return 1;; esac; done <"$temporary/$name.environment.files"
+  fi
+  if [ -n "$conventions" ]; then
+    conventions="$profile_dir/conventions"
+    test -d "$conventions" || { echo "$manifest: missing conventions/" >&2; return 1; }
+    find "$conventions" -mindepth 1 -type d -print -quit | grep -q . && { echo "$manifest: conventions/ must be flat" >&2; return 1; }
+    find "$conventions" -type l -print -quit | grep -q . && { echo "$manifest: symbolic links are not supported" >&2; return 1; }
+    find "$conventions" -type f -perm -111 -print -quit | grep -q . && { echo "$manifest: executable files are not supported" >&2; return 1; }
+    find "$conventions" -mindepth 1 ! -type f -print -quit | grep -q . && { echo "$manifest: conventions/ contains an unsupported entry" >&2; return 1; }
+    find "$conventions" -type f -print -quit | grep -q . || { echo "$manifest: conventions/ must contribute a file" >&2; return 1; }
+    find "$conventions" -maxdepth 1 -type f -print >"$temporary/$name.conventions.files"
+    while IFS= read -r file; do case "${file##*/}" in *.md) ;; *) echo "$manifest: unsupported conventions file: ${file##*/}" >&2; return 1;; esac; done <"$temporary/$name.conventions.files"
+  fi
+}
+
+destination_exists() {
+  [ -e "$workspace/$1" ] || [ -L "$workspace/$1" ]
 }
 
 protected_path() {
-  case "$1" in AGENTS.md|MOCCA.md|docs/*|specs/*|scripts/*|profiles/catalog/*) return 0;; *) test -e "$workspace/$1";; esac
+  case "$1" in
+    .mocca/profiles/*/conventions/*.md) destination_exists "$1";;
+    .mocca/*|AGENTS.md|MOCCA.md|docs/*|specs/*|scripts/*|profiles/catalog/*) return 0;;
+    *) destination_exists "$1";;
+  esac
 }
 
 applied=$(read_applied_profiles) || exit 1
@@ -237,15 +264,38 @@ done <"$selected"
 paths="$temporary/paths"; : >"$paths"
 while IFS= read -r name; do
   profile_dir=$(cat "$temporary/$name.directory")
-  while IFS= read -r file; do
-    relative=${file#"$profile_dir/environment/"}
-    protected_path "$relative" && { echo "profile $name attempts to overwrite protected or existing path: $relative" >&2; exit 1; }
-    if grep -Fq "|$relative" "$paths"; then echo "profile collision: $name and $(awk -F '|' -v p="$relative" '$2 == p { print $1; exit }' "$paths") both contribute $relative" >&2; exit 1; fi
-    printf '%s|%s|%s\n' "$name" "$relative" "$file" >>"$paths"
-  done <"$temporary/$name.files"
+  if test -f "$temporary/$name.environment.files"; then
+    while IFS= read -r file; do
+      relative=${file#"$profile_dir/environment/"}
+      protected_path "$relative" && { echo "profile $name attempts to overwrite protected or existing path: $relative" >&2; exit 1; }
+      if grep -Fq "|$relative" "$paths"; then echo "profile collision: $name and $(awk -F '|' -v p="$relative" '$2 == p { print $1; exit }' "$paths") both contribute $relative" >&2; exit 1; fi
+      printf '%s|%s|%s\n' "$name" "$relative" "$file" >>"$paths"
+    done <"$temporary/$name.environment.files"
+  fi
+  if test -f "$temporary/$name.conventions.files"; then
+    while IFS= read -r file; do
+      relative=".mocca/profiles/$name/conventions/${file##*/}"
+      protected_path "$relative" && { echo "profile $name attempts to overwrite protected or existing path: $relative" >&2; exit 1; }
+      if grep -Fq "|$relative" "$paths"; then echo "profile collision: $name and $(awk -F '|' -v p="$relative" '$2 == p { print $1; exit }' "$paths") both contribute $relative" >&2; exit 1; fi
+      printf '%s|%s|%s\n' "$name" "$relative" "$file" >>"$paths"
+    done <"$temporary/$name.conventions.files"
+  fi
 done <"$selected"
 
-while IFS='|' read -r name relative file; do cp "$file" "$workspace/$relative"; printf '%s\n' "$workspace/$relative" >>"$written"; done <"$paths"
+ensure_directory() {
+  directory=$1
+  while [ "$directory" != "$workspace" ] && [ ! -e "$directory" ]; do
+    printf '%s\n' "$directory" >>"$created_dirs"
+    directory=${directory%/*}
+  done
+  mkdir -p "$1"
+}
+
+while IFS='|' read -r name relative file; do
+  case "$relative" in .mocca/*) ensure_directory "$(dirname "$workspace/$relative")";; esac
+  cp "$file" "$workspace/$relative"
+  printf '%s\n' "$workspace/$relative" >>"$written"
+done <"$paths"
 new=$(awk 'NR > 1 { printf ", " } { printf "%s", $0 } END { if (NR) print "" }' "$selected")
 [ "$applied" = none ] || new="$applied, $new"
 state="$temporary/MOCCA.md"

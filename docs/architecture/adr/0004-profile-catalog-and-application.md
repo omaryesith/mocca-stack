@@ -28,3 +28,7 @@ remote Profile; Core itself remains usable without it. GitHub access uses
 existing environment credentials. A private source without access fails before
 workspace writes. Catalog updates, registries, hooks, runtimes, and source
 providers beyond GitHub remain deferred.
+
+**Current status:** the official `omaryesith/mocca-stack` source is now public,
+so its pinned Profile payloads can be fetched anonymously. The private-source
+behavior above remains part of the v1 contract for other sources.

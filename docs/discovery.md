@@ -42,11 +42,11 @@ Puppy includes:
   for reasonably testable behavior, and vertical checkpoints.
 - Product source separation from Core, with `app/` as the default for simple
   applications.
-- Profile Contract v1, Profile Catalog Contract v1, Approved capabilities,
+- Profile Contract v1.1, Profile Catalog Contract v1, Approved capabilities,
   deterministic matching, Profile Discovery, human selection, Applied
   Profiles, remote Profile Application, and `scripts/apply-profile`.
-- The official `python-django` Profile, graceful degradation, and Chef's
-  Recommendation.
+- The official `python-django` environment Profile and `docker`
+  conventions-only Profile, graceful degradation, and Chef's Recommendation.
 - Dogfooding, an English canonical README with Spanish human onboarding, and
   CI verification.
 
@@ -105,6 +105,6 @@ maintainer's installed integrations. The observable release gates live in
 
 ## Open questions
 
-No material product question blocks Puppy. General public distribution remains
-blocked while the official `python-django` Profile source is private; this is
-a release-access caveat, not a new product capability.
+No material product question blocks Puppy. Release remains pending the Docker
+Profile Catalog publication and E2E, plus the separate Environment Readiness
+Gate.

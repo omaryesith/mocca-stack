@@ -70,7 +70,6 @@ Mocca-managed authentication. A private source works only when the environment
 already has authorized Git access; otherwise fetch fails before workspace
 writes. Mocca does not store or request credentials.
 
-`omaryesith/mocca-stack` is currently private. Its official Profile entries
-therefore work only for authorized users. Before general public distribution,
-official payloads must move to a publicly accessible source or this repository
-must become public.
+`omaryesith/mocca-stack` is public. Its official Profile entries can therefore
+be fetched anonymously at their pinned refs. This does not make public access
+a requirement for third-party sources.

@@ -1,0 +1,12 @@
+schema_version: 1
+name: conventions-collision
+version: 1.0.0
+description: Test Profile with a preflight collision.
+capabilities:
+  - test:collision
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+contributions:
+  environment: environment/
+  conventions: conventions/

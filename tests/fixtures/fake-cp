@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+
+if [ "${MOCCA_FAIL_COPY_BASENAME-}" = "${2##*/}" ]; then
+  exit 1
+fi
+
+exec /bin/cp "$@"

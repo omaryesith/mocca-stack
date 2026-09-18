@@ -1,0 +1,10 @@
+schema_version: 1
+name: no-contributions
+version: 1.0.0
+description: Test Profile with no contributions.
+capabilities:
+  - test:none
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+contributions:

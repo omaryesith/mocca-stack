@@ -1,4 +1,4 @@
-# Profile Contract v1
+# Profile Contract v1.1
 
 A Profile is an optional, declarative capability pack. Its payload may be
 fetched on demand from a local Catalog entry after explicit selection. It
@@ -10,7 +10,8 @@ never selects technology, changes Mocca Core, or runs hooks.
 profiles/<name>/
 ├── profile.yaml
 ├── README.md
-└── environment/
+├── environment/     # optional
+└── conventions/     # optional
 ```
 
 Profiles prepare the approved engineering environment. They must not create,
@@ -19,6 +20,8 @@ select, or pre-shape the product source tree. Product source is created during
 decisions.
 
 `environment/` contains declarative engineering configuration only.
+`conventions/` contains engineering practices for exercising an approved
+capability. A Profile may contribute either directory or both.
 `README.md` explains prerequisites, what is contributed, and how to verify it.
 Commands documented there are not executed automatically by Mocca.
 
@@ -39,6 +42,7 @@ lifecycle:
 
 contributions:
   environment: environment/
+  conventions: conventions/
 
 matches: []
 dependencies: []
@@ -49,17 +53,22 @@ reapply: fail
 Required fields are `schema_version`, `name`, `version`, `description`,
 `capabilities`, `lifecycle`, and `contributions`. `matches`, `dependencies`,
 and `conflicts` default to empty lists; `reapply` defaults to `fail`.
-`capabilities` must contain at least one token.
+`capabilities` must contain at least one token. Within `contributions`,
+`environment` and `conventions` are individually optional, but at least one
+must be declared.
 
 The v1 parser accepts this documented YAML subset only: top-level scalar
 fields, two-space-indented list items, and the two mappings shown above. It
 does not accept anchors, aliases, flow mappings, arbitrary nesting, or
 expressions.
 
-`schema_version` is `1`; `name` must equal its directory name;
+`schema_version` remains `1`; `name` must equal its directory name;
 `lifecycle.apply_after` is `technology_selection` and
-`lifecycle.apply_in` is `IMPLEMENTATION_READY`; and
-`contributions.environment` is `environment/`.
+`lifecycle.apply_in` is `IMPLEMENTATION_READY`. When present,
+`contributions.environment` is `environment/` and
+`contributions.conventions` is `conventions/`. This is an additive v1.1
+extension: Profiles using only `environment/` remain valid; older strict
+parsers reject the unknown `conventions` key rather than applying it partially.
 
 ## Environment boundary
 
@@ -79,6 +88,20 @@ routes, settings, models, migrations, views, forms, product templates, UI,
 authentication, persistence behavior, or other product behavior. In
 particular, `app/`, `src/`, `apps/`, `packages/`, `frontend/`, and `backend/`
 do not belong in a v1 Profile contribution.
+
+## Conventions boundary
+
+`conventions/` is flat. It must contain at least one regular, non-executable
+Markdown file (`.md`); subdirectories, symbolic links, hooks, scripts, source
+files, product artifacts, and every other extension are rejected. Mocca does
+not interpret or execute convention content.
+
+When applied, convention files are materialized only at
+`.mocca/profiles/<profile>/conventions/`. `.mocca/` is a reserved Core
+namespace: Profiles cannot write conventions to the project root, `docs/`,
+`specs/`, or product paths. Applied Profile conventions are active engineering
+rules for their capabilities. A material deviation must be justified in the
+relevant specification, architecture record, or ADR.
 
 ## Selection and matching
 
@@ -127,8 +150,9 @@ dependency solver: every dependency must be selected and appear earlier in
 that order. Missing or misordered dependencies, conflicts, duplicate Profiles,
 and unsupported reapplication fail before destination writes.
 
-All Profile environments and Core-protected paths are inspected before writing.
-Any collision fails: there is no merge and no last-profile-wins behavior.
+All Profile environment and convention contributions, and Core-protected paths,
+are inspected before writing. Any collision fails: there is no merge and no
+last-profile-wins behavior.
 `AGENTS.md`, `MOCCA.md`, `docs/`, `specs/`, and `scripts/verify` are protected
 Core paths; any other existing path from `templates/core/` is protected too.
 `reapply: fail` is the only v1 behavior.
@@ -139,4 +163,5 @@ independent second barrier.
 Profile manifests contain no hooks or executable code. There is no registry,
 plugin runtime, or automatic execution of third-party verification commands.
 The workspace applicator fetches only explicitly selected, commit-pinned
-GitHub payloads; it never executes their content.
+GitHub payloads; it never executes their content. It validates every selected
+contribution and plans all destinations before materializing either kind.

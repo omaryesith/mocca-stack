@@ -1,0 +1,11 @@
+schema_version: 1
+name: conventions-subdirectory
+version: 1.0.0
+description: Test Profile with nested conventions.
+capabilities:
+  - test:nested
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+contributions:
+  conventions: conventions/

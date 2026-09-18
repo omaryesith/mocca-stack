@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+
+: "${MOCCA_DOCKER_CALLED:?}"
+: >"$MOCCA_DOCKER_CALLED"
+exit 1

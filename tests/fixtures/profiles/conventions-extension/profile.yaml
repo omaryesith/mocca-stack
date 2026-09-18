@@ -1,0 +1,11 @@
+schema_version: 1
+name: conventions-extension
+version: 1.0.0
+description: Test Profile with invalid convention extension.
+capabilities:
+  - test:extension
+lifecycle:
+  apply_after: technology_selection
+  apply_in: IMPLEMENTATION_READY
+contributions:
+  conventions: conventions/

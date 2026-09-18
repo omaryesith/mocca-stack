@@ -24,9 +24,10 @@ chosen, so important decisions are explicit and work is verifiable.
 
 **Mocca does not start technology projects. It starts engineering processes.**
 
-Puppy closes the technology-neutral Core and its safe Profile lifecycle; its
-normative [scope](docs/discovery.md) and [release gates](docs/requirements.md)
-define what remains before release.
+Puppy establishes the technology-neutral Core and its safe Profile lifecycle.
+Its normative [scope](docs/discovery.md) and
+[release gates](docs/requirements.md) record the current v0.1 evidence and
+remaining release work.
 
 ## Quick Start
 

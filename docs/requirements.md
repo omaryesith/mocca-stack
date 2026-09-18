@@ -14,8 +14,9 @@ under the current autonomy policy; v0.1 adds no approval metadata or workflow.
 | FR-4 | Generated `./scripts/verify` validates the engineering-workspace contract before an implementation stack exists. |
 | FR-5 | The workflow defines bounded implementation autonomy, test-first practice for reasonably testable behavior, vertical checkpoints, and verification-backed closure: a checkpoint closes only after its required command succeeds with exit status 0; a known verification failure invalidates closure and completion. |
 | FR-6 | Core records Approved capabilities, discovers compatible local Catalog entries deterministically, and requires human selection before Profile Application. |
-| FR-7 | `scripts/apply-profile` fetches an explicitly selected, commit-pinned GitHub Profile; validates Catalog/payload parity and Profile Contract v1; materializes only a safe declarative environment; and updates Applied Profiles atomically. |
+| FR-7 | `scripts/apply-profile` fetches an explicitly selected, commit-pinned GitHub Profile; validates Catalog/payload parity and Profile Contract v1.1; materializes only safe declared environment and conventions contributions; and updates Applied Profiles atomically. |
 | FR-8 | `python-django` provides a Python/Django/uv engineering environment without product-source scaffolding. |
+| FR-9 | `docker` provides only Docker engineering conventions for an approved `containerization:docker` capability; it does not install or execute Docker or contribute product artifacts. |
 
 ## Non-functional requirements
 
@@ -60,28 +61,28 @@ under the current autonomy policy; v0.1 adds no approval metadata or workflow.
 | FR-2–3, NFR-2, AC-4 & AC-6 | Primary use case, discoverability goal, success criterion |
 | FR-4, NFR-3, AC-3 & AC-5 | Verification constraint, success criterion, verification contract |
 | FR-5 | Primary use case, explicit-decision goal, autonomy policy |
-| FR-6–8, NFR-5, AC-7–8 | Approved Profile Contract and Catalog decisions, ADRs 0003–0004 |
+| FR-6–9, NFR-5, AC-7–8 | Approved Profile Contract and Catalog decisions, ADRs 0003–0005 |
 | NFR-4 | Stay Small; tool-coupling and premature-automation risks |
 
 ## Puppy release gates
 
-1. `./scripts/verify` passes locally.
-2. CI invokes and passes `./scripts/verify`.
-3. A clean-environment E2E reaches idea → implementation-ready specification
+1. **PASS** — `./scripts/verify` passes locally.
+2. **PASS** — CI invokes and passes `./scripts/verify`.
+3. **PASS** — A clean-environment E2E reaches idea → implementation-ready specification
    → approved implementation → verification without hidden reliance on
    maintainer-installed integrations.
-4. A no-Git E2E shows that Core and Profile Discovery work while Profile
+4. **PASS** — A no-Git E2E shows that Core and Profile Discovery work while Profile
    Application fails clearly and atomically.
-5. A real remote Profile E2E fetches a pinned Profile, validates parity,
+5. **PASS** — A real remote Profile E2E fetches a pinned Profile, validates parity,
    materializes only its environment, and updates Applied Profiles.
-6. Profile Contract security fixtures are exercised.
-7. Pending: a full implementation E2E closes vertical checkpoints only after
+6. **PASS** — Profile Contract security fixtures are exercised.
+7. **PASS** — A full implementation E2E closes vertical checkpoints only after
    successful required verification, finishes with final verification green,
    and marks Project Pulse `done` only with no known failures.
-
-The official `python-django` source is currently private. That blocks general
-public distribution until source access is resolved; it does not create a new
-product requirement.
+8. **PENDING** — A real remote `docker` Profile E2E fetches its pinned payload,
+   applies only conventions, and performs no Docker installation or execution.
+9. **PENDING** — The Environment Readiness Gate demonstrates the approved
+   capability-detection behavior without host provisioning.
 
 ## Deferred requirements
 
